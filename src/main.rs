@@ -7,7 +7,6 @@ use std::{fs, io::ErrorKind};
 
 fn main() {
     print_hello_world();
-
     homework::transfer_temperature_to_hua(1.0);
     homework::transfer_temperature_to_wen(33.8);
     classes::guest_game();
