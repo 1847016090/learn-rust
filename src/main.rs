@@ -1,10 +1,34 @@
-use rand::Rng;
-use std::io::stdin;
+mod enter_01;
+use enter_01::print_hello_world;
+
+mod guest_game_02;
+use guest_game_02::{classes, homework};
+use std::{fs, io::ErrorKind};
 
 fn main() {
-    let secret_num = rand::thread_rng().gen_range(1..101);
-    println!("随机生成的数字={}", secret_num);
-    let mut str: String = String::new();
-    stdin().read_line(&mut str).expect("报错啦");
-    print!("输出={}", str)
+    print_hello_world();
+
+    homework::transfer_temperature_to_hua(1.0);
+    homework::transfer_temperature_to_wen(33.8);
+    classes::guest_game();
+    println!("斐波那契数列。");
+    let input: i8 = 6;
+    let value = homework::fib(input);
+    println!("fib({})={}", input, value);
+
+    println!("读取歌词循环打出歌词");
+    let mut content: String = match homework::deal_song() {
+        Ok(val) => val,
+        Err(err) => {
+            return match err.kind() {
+                ErrorKind::NotFound => {
+                    fs::File::create("./static/song.txt").unwrap();
+                }
+                _ => {
+                    println!("err={}", err);
+                }
+            };
+        }
+    };
+    println!("歌词={:?}", &content.split("\n\n"))
 }
