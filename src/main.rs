@@ -1,13 +1,36 @@
 mod enter_01;
-use enter_01::print_hello_world;
+// use enter_01::print_hello_world;
 
 mod guest_game_02;
-use guest_game_02::{classes, homework};
-use std::{fs, io::ErrorKind};
+// use guest_game_02::{classes, homework};
+// use std::{fs, io::ErrorKind};
 
 fn main() {
-    let mut arr = Vec::new();
-    arr.push(1);
+    let arr: Vec<i32> = vec![1, 2, 3, 4, 5];
+    for i in arr {
+        if i == 3 {
+            continue;
+        }
+        println!("{}", i)
+    }
+    println!("========:========");
+    for i in 1..6 {
+        if i == 3 {
+            continue;
+        }
+        println!("{}", i)
+    }
+
+    // let mut arr: [i8; 2] = [1, 1];
+    // arr.push(1);
+    // let mut arr1 = vec![];
+    // arr1.push(1);
+    // let arr: [i8; 2] = [1, 2];
+    // let tuple: (i32, &str) = (1, "stephen");
+    // let first: i32 = tuple.0; // 1
+    // let second: &str = tuple.1; // "stephen"
+    // let return_str = if true { "right" } else { 1 };
+
     // print_hello_world();
     // homework::transfer_temperature_to_hua(1.0);
     // homework::transfer_temperature_to_wen(33.8);
