@@ -174,3 +174,40 @@ fn plus_five(x: i32) -> i32 {
 fn dead_end() -> ! {
     panic!("你已经到了穷途末路，崩溃吧！");
 }
+
+pub mod homework {
+    // 摄氏温度与华氏温度的相互转换。 1摄氏度 = 33.8 华氏温度
+    pub fn transfer_temperature_to_hua(tem: f32) {
+        let transferred_value = tem * 33.8;
+        println!(
+            "摄氏温度{a}度转为华氏摄氏度为{b}",
+            a = tem,
+            b = transferred_value
+        )
+    }
+    pub fn transfer_temperature_to_wen(tem: f32) {
+        let transferred_value = tem / 33.8;
+        println!(
+            "华氏摄氏度{a}度转为摄氏温度为{b}",
+            a = tem,
+            b = transferred_value
+        )
+    }
+    // 生成一个n阶的斐波那契数列。
+    pub fn fib(n: i8) -> i8 {
+        if n == 1 || n == 2 {
+            return 1;
+        }
+        return fib(n - 1) + fib(n - 2);
+    }
+    // 打印圣诞颂歌The Twelve Days of Christmas的歌词，并利用循环处理其中重复的内容。
+    pub fn deal_song() -> Result<String, std::io::Error> {
+        use std::fs;
+        let result: Result<String, std::io::Error> = fs::read_to_string("./static/song.txt");
+        let content = match result {
+            Ok(data) => data,
+            Err(err) => return Err(err),
+        };
+        return Ok(content);
+    }
+}

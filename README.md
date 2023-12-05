@@ -289,8 +289,8 @@ let arr: Vec<i32> = vec![1, 2, 3, 4, 5];
     }
 ```
 
-**课后作业**
+**[课后作业](src/general_program_concept_03.rs)**
 
-- 摄氏温度与华氏温度的相互转换。
+- 摄氏温度与华氏温度的相互转换
 - 生成一个n阶的斐波那契数列。
 - 打印圣诞颂歌The Twelve Days of Christmas的歌词，并利用循环处理其中重复的内容。
