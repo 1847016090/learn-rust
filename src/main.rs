@@ -6,9 +6,36 @@ mod guest_game_02;
 // use std::{fs, io::ErrorKind};
 
 fn main() {
-    let str: String = String::from("hello");
-    let x = &str[1..3];
-    println!("{}", x)
+    // struct Position(i16, i16, i16);
+
+    // let pos = Position(1, 1, 1);
+    // println!("{}", pos.0)
+    #[derive(Debug)]
+    struct User {
+        name: String,
+        age: i8,
+        height: i32,
+    }
+    impl User {
+        fn compare_age(&self, other: &User) -> bool {
+            // 为User定义一个判断是否是成人的方法
+            self.age >= other.age
+        }
+    }
+    let user = User {
+        name: String::from("james"),
+        age: 17,
+        height: 203,
+    };
+    let user1 = User {
+        name: String::from("stephen"),
+        age: 18,
+        height: 176,
+    };
+    println!("我的年纪更大:{}", user1.compare_age(&user))
+    // let str: String = String::from("hello");
+    // let x = &str[1..3];
+    // println!("{}", x)
     // str.push_str("hello");
     // fn calc_len(mut x: String) -> String {
     //     x.push_str(", world");

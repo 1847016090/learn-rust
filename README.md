@@ -380,3 +380,144 @@ println!("{}", x) // "el"
 - 首位和末位都没有的时候，默认为整个字符串(数组)
 
 ## 5 结构体
+
+### 5.1 声明一个结构体
+
+在rust中，当我们需要声明一个结构体，需要在使用`struct`这个关键字，例如：
+
+```rust
+struct User {
+    name: String,
+    age: i8,
+    height: i8,
+}
+let user = User {
+    name: String::from("stephen"),
+    age: 18,
+    height: 176,
+};
+```
+
+结构题还可以这样来简化一个初始化的传参，例如：
+
+```rust
+fn build_user(name: String, age: i8) -> User {
+    User { name, age, height: 176 }
+}
+```
+
+当我们想接受另外一个实例的数据，如果我们一个一个传进去，参数多了就会非常麻烦，我们可以使用`..`来将重复的参数传入进去，例如：
+
+```rust
+#[derive(Debug)]
+struct User {
+    name: String,
+    age: i8,
+    height: i32,
+}
+let user = User {
+    name: String::from("stephen"),
+    age: 18,
+    height: 176,
+};
+
+let user1 = User {
+    name: String::from("james"),
+    ..user
+};
+
+```
+
+### 5.2 打印结构体
+
+当我们要打印一个结构体实例的时候，如果使用`println("{}", user1)`是完全不够的，因为打印结构体是需要实现`Display`特征的，但是我们可以直接使用下面的方法来打印，例如：
+
+```rust
+println!("{:?}", user1); // 不会格式化
+println!("{:#?}", user1) // 会格式化
+```
+
+### 5.3 元祖结构体
+
+我们还可以定义一种特殊的结构体，叫做元祖结构体，例如：
+
+```rust
+struct Position(i16, i16, i16);
+let pos = Position(1, 1, 1);
+println!("{}", pos.0)
+```
+
+我们可以直接和元祖一样去结构，或者使用索引`pos.0`去访问具体的值。
+
+### 5.3 空结构体
+
+当我们需要为一个结构体加上`特征trait`时，并且不需要存储任何的数据时，这时候我们可以声明一个空结构体,例如：
+
+```rust
+struct User;
+```
+
+### 5.4 方法
+
+我们可以为结构体声明方法，这个方法的第一个参数，永远返回的地是结构体的实例，例如：
+
+```rust
+#[derive(Debug)]
+struct User {
+    name: String,
+    age: i8,
+    height: i32,
+}
+impl User {
+    fn is_adult(&self) -> bool { // 为User定义一个判断是否是成人的方法
+        self.age >= 18
+    }
+}
+let user = User {
+    name: String::from("stephen"),
+    age: 18,
+    height: 176,
+};
+println!("{:#?}", user.is_adult())
+```
+
+我们也可以给方法传入更多的参数，例如：
+
+```rust
+impl User {
+    fn compare_age(&self, other: &User) -> bool {
+        // 为User定义一个判断是否是成人的方法
+        self.age >= other.age
+    }
+}
+let user = User {
+    name: String::from("james"),
+    age: 17,
+    height: 203,
+};
+let user1 = User {
+    name: String::from("stephen"),
+    age: 18,
+    height: 176,
+};
+println!("我的年纪更大:{}", user1.compare_age(&user))
+```
+
+### 5.5 关联函数
+
+我们也可以声明一个类似于`String::from`的一个关联函数，我们的参数可以自定义，例如：
+
+```rust
+impl User {
+    fn relative_fn(name: String, age: i8) -> User {
+        User {
+            name,
+            age,
+            height: 176,
+        }
+    }
+}
+
+let user = User::relative_fn(String::from("stephen"), 18);
+println!("{:#?}", user)
+```
