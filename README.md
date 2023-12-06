@@ -291,6 +291,92 @@ let arr: Vec<i32> = vec![1, 2, 3, 4, 5];
 
 **[课后作业](src/general_program_concept_03.rs)**
 
-- 摄氏温度与华氏温度的相互转换
+- 摄氏温度与华氏温度的相互转换。
 - 生成一个n阶的斐波那契数列。
 - 打印圣诞颂歌The Twelve Days of Christmas的歌词，并利用循环处理其中重复的内容。
+
+## 4 认识所有权
+
+### 4.1 所有权
+
+当我们对一个没有实现可`Copy`特征的数据进行移动时，此时就发生了所有权的转移，例如：
+
+```rust
+let x = String::new();
+let y = x; // 所有权发生了移动，此时我们再去打印x的值，会发生错误
+println!("{}", x); // 报错
+
+let basic: &str = "hello world";
+let copy_basic: &str = basic;
+println!("{}", basic); // 可以正常打印出来
+```
+
+还有什么情况会发生所有权的移动呢？当我们向函数传参时，也会发生，传参的过程就相当于声明了一个隐式的变量。例如：
+
+```rust
+let mut str: String = String::new();
+str.push_str("hello");
+fn calc_len(x: String) -> usize {
+    return x.len();
+}
+let len: usize = calc_len(str); 
+println!("{}", len);
+println!("{}", str); // 报错，所有权转移到了函数内部，并且在函数执行完毕之后就被销毁
+```
+
+那么哪些数据是可`Copy`的呢？现在我们把所有默认具有该特征的数据类型列出来：
+
+- 所有的标量数据类型
+  - 整数
+  - 浮点数
+  - 字符串字面量
+  - 布尔值
+- （只包含标量数据类型的）元祖
+
+### 4.2 引用和借用
+
+那么当我想要传入函数(所有权力的例子)后，不失去所有权呢？
+此时，我们就需要引入`引用`这个概念了。
+
+我们想要引用一个数据时，需要在变量名前面加上`&`，这个时候我们可以调用它内部的一些函数，例如：
+
+```rust
+let mut str: String = String::from("hello");
+fn calc_len(x: &String) -> usize {
+    return x.len();
+}
+let len = calc_len(&str);
+println!("{}", len);
+println!("{}", str); // 报错，所有权转移到了函数内部，并且在函数执行完毕之后就被销毁
+```
+
+那如果我想对该变量进行修改呢？很简单，我么可以直接在`&`加上`mut`属性。例如：
+
+```rust
+let mut str: String = String::from("hello");
+fn add_string(x: &mut String) {
+    x.push_str(", world")
+}
+
+add_string(&mut str);
+println!("{}", str);
+```
+
+### 4.3 切片
+
+当我们想获取字符串(数组)的其中某一段的时候，这个时候我们就需要使用到`切片`的功能，例如：
+
+```rust
+let str: String = String::from("hello");
+let x = &str[1..3];
+println!("{}", x) // "el"
+```
+
+其中对于`[1..3]`我们可以理解为
+
+- 首位数为起始索引(包含)，末位数为结束索引(不包含)
+- 当首位数没有的时候，默认为0，例如: `[..3]`
+- 当末位数没有的时候，默认为最后一个索引，例如: `[1..]`
+- 首位和末位都没有的时候，默认为整个字符串(数组)
+
+## 5 结构体

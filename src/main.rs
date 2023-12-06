@@ -6,20 +6,30 @@ mod guest_game_02;
 // use std::{fs, io::ErrorKind};
 
 fn main() {
-    let arr: Vec<i32> = vec![1, 2, 3, 4, 5];
-    for i in arr {
-        if i == 3 {
-            continue;
-        }
-        println!("{}", i)
-    }
-    println!("========:========");
-    for i in 1..6 {
-        if i == 3 {
-            continue;
-        }
-        println!("{}", i)
-    }
+    let str: String = String::from("hello");
+    let x = &str[1..3];
+    println!("{}", x)
+    // str.push_str("hello");
+    // fn calc_len(mut x: String) -> String {
+    //     x.push_str(", world");
+    //     return x;
+    //     // }
+    //    let  calc_len(str);
+    //     println!("{}", str)
+    // let arr: Vec<i32> = vec![1, 2, 3, 4, 5];
+    // for i in arr {
+    //     if i == 3 {
+    //         continue;
+    //     }
+    //     println!("{}", i)
+    // }
+    // println!("========:========");
+    // for i in 1..6 {
+    //     if i == 3 {
+    //         continue;
+    //     }
+    //     println!("{}", i)
+    // }
 
     // let mut arr: [i8; 2] = [1, 1];
     // arr.push(1);
