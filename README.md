@@ -521,3 +521,152 @@ impl User {
 let user = User::relative_fn(String::from("stephen"), 18);
 println!("{:#?}", user)
 ```
+
+## 6. 枚举
+
+### 定义枚举
+
+在rust中我们使用`enum`定义一个枚举，并且枚举使用`大驼峰`的命名方式，例如：
+
+```rust
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+```
+
+那我们应该如何使用枚举呢？我们可以直接在定义好的枚举名后面使用`::`就可以访问到枚举内的数据，如下：
+
+```rust
+Color::Blue
+```
+
+我们还可以使用`enum`定义`不同变体`的枚举，例如：
+
+```rust
+#[derive(Debug)]
+enum Color {
+    Red,
+    Green,
+    Blue,
+    RGB(u16, u16, u16), // 元祖结构体
+    Hex { input: String }, // 结构体
+}
+println!("{:#?}", Color::Hex { input: String::from("#000") });
+println!("{:#?}", Color::RGB(255, 255, 255));
+```
+
+rust还为我们内置了`Option`枚举，用于处理一个不可靠的值，假如该值可能不存在，那我们可以使用该枚举来定义值；当我们完全能确认我们定义的值存在，那就没有必要使用，后面我们会结合着`match`使用。例如：
+
+```rust
+let _not_confirmed_value: Option<i8> = Some(1);
+let _not_confirmed_value: Option<i8> = None;
+```
+
+### 为枚举定义方法
+
+枚举和结构体一样，我们使用`impl`为其定义方法,如果第一个参数是`&self`表示需要生成实例后调用；否则我们只需要使用`::`调用即可。例如：
+
+```rust
+ #[derive(Debug)]
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+impl Color {
+    fn instance_fn(&self) {
+        println!("{:#?}", self);
+    }
+    fn static_fn() {
+        println!("{:#?}", Color::Red)
+    }
+}
+
+Color::static_fn(); // Red
+let color = Color::Blue;
+color.instance_fn();  //Blue
+```
+
+### `match`匹配
+
+当我们使用枚举类型，并且想要使用一个变量值去判断是否和其中的某一项相等，如果我们直接使用`if`去判断，会报错，这个时候就引出`match`，例如：
+
+```rust
+#[derive(Debug)]
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+fn match_color(color: Color) {
+    match color {
+        Color::Blue => {
+            println!("{}", "蓝色")
+        }
+        Color::Green => {
+            println!("{}", "绿色")
+        }
+        Color::Red => {
+            println!("{}", "红色")
+        }
+    }
+}
+match_color(Color::Blue);
+```
+
+由于rust里面的`match`是穷尽匹配，所有我们需要把所有的每项列出来，这样会很麻烦，如果数据过多，这时我们可以使用通用匹配符号`_`，例如：
+
+```rust
+#[derive(Debug)]
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+fn match_color(color: Color) {
+    match color {
+        Color::Blue => {
+            println!("{}", "蓝色")
+        }
+        _ => println!("其余颜色"), // 通配符
+    }
+}
+
+match_color(Color::Red);
+```
+
+我们刚刚提到的内置的`Option`枚举类型，我们可以使用`match`来对其进行匹配，例如：
+
+```rust
+fn add_one(value: Option<i8>) -> Option<i8> {
+    match value {
+        Option::Some(i) => Some(i + 1),
+        Option::None => None,
+    }
+}
+let num: Option<i8> = Some(5);
+let num: Option<i8> = add_one(num);
+println!("{:#?}", num) // Some(6)
+```
+
+上面我们使用`Some(5)`去匹配`Some(i)`依然能匹配上，这里因为i是`i8`的数字类型，和我们定义的变量相同，所以能够匹配上，否则就会匹配到`None`
+
+### `if let`匹配
+
+如果我们只想匹配枚举中的一个项，而不想写通配符，这个时候我们就可以使用`if let`来匹配枚举，例如：
+
+```rust
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+let color: Color = Color::Blue;
+if let Color::Blue = color {
+    println!("蓝色")
+}
+```
