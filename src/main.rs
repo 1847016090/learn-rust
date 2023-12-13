@@ -5,16 +5,55 @@
 // use guest_game_02::{classes, homework};
 // use std::{fs, io::ErrorKind};
 
+// mod public_module {
+//     pub fn test() {
+//         println!("{}", 1)
+//     }
+// }
+// fn test(){
+//     self::
+// }
+mod restaurant {
+    pub mod free {
+        pub fn add_rice() {}
+        mod soup {
+            fn add_soup() {
+                crate::restaurant::money::add_vegetable()
+            }
+        }
+    }
+    mod money {
+        pub fn add_vegetable() {}
+        fn add_fruits() {}
+    }
+}
+
 fn main() {
-    enum Color {
-        Red,
-        Green,
-        Blue,
+    mod my_module {
+        fn test() {}
+        struct User {
+            age: i8,
+            name: String,
+            email: String,
+        }
+        enum Color {
+            Red,
+            Green,
+            Blue,
+        }
     }
-    let color: Color = Color::Blue;
-    if let Color::Blue = color {
-        println!("蓝色")
-    }
+
+    // self::public_module::test();
+
+    // enum Color {
+    //     Red,
+    //     Green,
+    //     Blue,
+    // }
+    // let color: Color = Color::Blue;
+    // if let Color::Blue = color {
+    //     println!("蓝色")
+    // }
     // fn add_one(value: Option<i16>) -> Option<i8> {
     //     match value {
     //         Option::Some(i:i8) => Some(i + 1),

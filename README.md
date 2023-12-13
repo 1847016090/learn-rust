@@ -670,3 +670,211 @@ if let Color::Blue = color {
     println!("蓝色")
 }
 ```
+
+## 7 包和模块
+
+### 7.1 二进制单元包(项目)和库单元包
+
+#### 7.1.1 什么是二进制单元包
+
+二进制单元包也就是我们通过`cargo new project`生成的项目，最外层存在一个`Cargo.toml`的文件作为项目安装的文件目录，`src/main.rs`为该项目的根文件
+
+#### 7.1.2 什么是库单元包
+
+而库单元包则是使用`cargo new library --lib`命令生成，`src/lib.rs`是该项目的根文件
+
+#### 7.1.3 单元包可以拆解成不同的模块
+
+在Rust，库单元包可以由很多单元包组成，而单元包则可以由很多的模块组成
+
+### 7.2 定义模块
+
+那在Rust中我们应该怎么定义模块呢？我们需要使用关键字`mod`，例如：
+
+```rust
+mod my_module {}
+```
+
+我们可以在模块里面，定义函数，结构体，枚举，模块，例如：
+
+```rust
+mod my_module {
+    fn test() {}
+    mod other_module {}
+    struct User {}
+    enum Color {}
+}
+```
+
+### 7.3 共有模块和私有模块
+
+在模块中，Rust默认所有的属性都是私有属性，所以当我们需要在一个模块、文件中使用另外一个模块的内容，我们需要使用`pub`关键字声明它是一个公有属性，例如：
+
+```rust
+pub mod my_module {
+    pub fn test() {}
+    pub mod other_module {}
+    pub struct User {}
+    pub enum Color {}
+}
+```
+
+其中结构体和枚举的共有声明有点差别，其中结构体不仅需要给自己添加`pub`关键字，自身的属性也需要添加才能对外暴露使用，而枚举之需要给自己添加`pub`即可，例如：
+
+```rust
+pub mod my_module {
+    pub struct User {
+        pub age: i8, // 公有
+        name: String, // 私有
+        email: String, // 私有
+    }
+    pub enum Color {
+        Red, // 公有
+        Green, // 公有
+        Blue, // 公有
+    }
+}
+```
+
+### 7.4 引用模块
+
+首先我们先声明一个模块，并且里面还包含了其他模块和方法，例如：
+
+```rust
+mod restaurant {
+    pub mod free {
+       pub fn add_rice() {}
+    }
+    mod money {
+        fn add_vegetable(){}
+        fn add_fruits() {}
+    }
+   
+}
+```
+
+这里我们要讲到三个关键字，`self`，`super`，`crate`，我们讲讲他们的作用。
+其中`self`，表示它可以引用自身模块的项，例如：
+
+```rust
+mod restaurant {
+    pub mod free {
+       pub fn add_rice() {}
+    }
+    mod money {
+        fn add_vegetable(){}
+        fn add_fruits() {
+            // 其中add_vegetable、add_fruits 是最近一个模块money的所属方法
+            self::add_vegetable(); 
+            self::add_fruits();
+        }
+    }
+}
+
+self::restaurant::free // 但是这样显得多次一举，我们可以直接 restaurant::free
+```
+
+对于`super`， 它代表的是以父模块开始的引用，可以引用父模块同层的变体，例如：
+
+```rust
+mod restaurant {
+    pub mod free {
+       pub fn add_rice() {}
+    }
+    mod money {
+        fn add_vegetable(){}
+        fn add_fruits() {
+            super::free;  // 引用父模块的同层
+            super::money; // 引用父模块的同层
+        }
+    }
+    fn here(){
+        super::user // 可以调用 模块 restaurant 同层的模块
+    }
+}
+
+mod user {}
+```
+
+对于`crate`，表示的是从`src/main.rs`或者`src/lib.rs`模块开始的引用，表示为根目录，我们可以在根目录的任何层级中使用`crate`调用该文件中的任何共有的变体，例如：
+
+```rust
+mod restaurant {
+    mod free {
+        pub fn add_rice() {}
+        mod soup {
+            fn add_soup() {
+                // 我们在这里如果想要使用money中的方法，只有使用crate才能拿到该方法
+                crate::restaurant::money::add_vegetable()
+            }
+        }
+    }
+    mod money {
+        pub fn add_vegetable() {}
+        fn add_fruits() {}
+    }
+}
+```
+
+### 7.5 拆分文件
+
+在日常开发中，我们肯定不会将所有的方法之类的放到一个文件夹中，所以我们可以将这些变体单独提取到一个文件中，我们新建一个文件和`main.rs`同层级，例如：
+
+```rust
+// 我们将上面的restaurant模块单独拆分到restaurant文件中
+// restaurant.rs 
+mod restaurant {
+    pub mod free {
+       pub fn add_rice() {}
+    }
+    mod money {
+        fn add_vegetable(){}
+        fn add_fruits() {}
+    }
+   
+}
+```
+
+这个时候，我们需要在`main.rs`来引用这个文件中的模块，此时，我们需要使用`use`关键字，例如：
+
+```rust
+mod restaurant; // 等同于直接将文件引入进来
+use restaurant::free; // 此时就可以可以用到该模块
+```
+
+当我们需要在当前的文件中，把引入的模块再此导出去供其他文件使用，我们可以在`use`前面加一个`pub`关键字，例如：
+
+```rust
+mod restaurant; 
+pub use restaurant::free; // 此时外部可以使用free模块
+```
+
+#### 7.4.3 全部引用
+
+当我们想将一个模块中的所有变体都引入到当前的作用域中，我们可以使用`*`，例如：
+
+```rust
+use restaurant::*;
+```
+
+#### 7.4.4 解构引用
+
+我们也可以将引入的模块解构来使用，例如：
+
+```rust
+use restaurant::{free, free::add_rice};
+```
+
+#### 7.4.5 重命名
+
+我们在上面的引用，很有可能导致名字的重复，这个时候我们可以对引入的变体进行重命名，例如：
+
+```rust
+use restaurant::free as new_free;
+```
+
+## 8 通用集合类型
+
+## 9 错误处理
+
+## 10 特征和声明周期
