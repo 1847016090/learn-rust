@@ -875,6 +875,249 @@ use restaurant::free as new_free;
 
 ## 8 通用集合类型
 
+通用集合类型分为三种：动态数组，动态字符串，哈希映射，他们都会被存储在内存堆上。我们首先来看看动态数组。
+
+### 8.1 动态数组
+
+对于动态数组而言，我们只能存储相同数据类型的值。
+首先我们先来创建一个动态数组，我们可以使用`Vec::new()`，例如：
+
+```rust
+let arr: Vec<i8> = Vec::new();
+```
+
+如果我们想往里面存储值，我们可以调用该实例的`push`方法，但是我们得先将变量名声明为可变`mut`，例如：
+
+```rust
+let arr: Vec<i8> = Vec::new();
+arr.push(1)
+arr.push(2)
+println!("{:?}", arr)
+```
+
+我们使用`Vec::new()`只能声明一个空的动态数组，如果我们想直接生成一个具有初始值的动态数组呢？
+我们可以使用`vec!`宏，例如：
+
+```rust
+let arr: Vec<i8> = vec![1,2,3];
+```
+
+我们在最开始提到，动态数组只能存储相同的数据类型，但是如果我们存储的值有字符串，数字等等呢？这个时候我们可以结合着枚举来使用，存储不同数据类型的值，例如：
+
+```rust
+#[derive(Debug)]
+enum StoreData {
+    Int(i32),
+    Float(f64),
+    Str(String),
+    Boolean(bool),
+}
+
+let mut arr: Vec<StoreData> = Vec::new();
+
+arr.push(StoreData::Float(1.0)); // 存储浮点数
+arr.push(StoreData::Int(2)); // 存储整数
+arr.push(StoreData::Str(String::from("这是一串字符"))); // 存储字符串
+arr.push(StoreData::Boolean(true)); // 存储布尔值
+println!("{:?}", arr);
+```
+
+讲了创建动态数组，接下来我们讲讲如何获取动态数组的值。
+一般有以下两种方式，一种是使用索引，另一种是使用`get`方法。我们先使用索引的方式，例如：
+
+```rust
+let arr = vec![1, 2, 3];
+println!("{}", &arr[0]); // 正常输出1
+```
+
+但是如果我们访问一个，超过数组长度的索引，会报越界访问的错误，例如：
+
+```rust
+println!("{}", &arr[5]); // index out of bounds: the len is 3 but the index is 5
+// 所以我们需要要避免越界访问的出现
+```
+
+但是如果我们使用`get`的形式，去获取动态数组的值，它会返回一个`Option`的枚举，如果出现**访问越界**的情况，我们可以使用`Option::None`去处理，例如：
+
+```rust
+let arr = vec![1, 2, 3];
+match &arr.get(5) {
+    Option::Some(i) => {
+        println!("{}", i);
+    }
+    Option::None => {
+        println!("出现数组越界的情况"); // match匹配会达到这里，因为出现了数组越界的情况
+    }
+}
+```
+
+当然，如果我们需要批量读取数据的时候，这个时候我们就需要使用循环了，例如：
+
+```rust
+let arr = vec![1, 2, 3];
+for i in &arr {
+    println!("{}", i);
+}
+```
+
+那如果我们要修改里面的数据，比如，我需要将数组里面的数据都乘以2， 例如：
+
+```rust
+let mut arr = vec![1, 2, 3];
+for i in &mut arr {
+    *i *= 2; // 这里我们需要对元素解引用才能修改元素
+    println!("{}", i);
+}
+```
+
+### 8.2 动态字符串
+
+接下来我们讲讲，如何创建一个动态字符串，它和动态数组有点类型，我们可以直接使用`String`上面的`new`方法，例如：
+
+```rust
+let str: String = String::new();
+```
+
+这个实例创建好了之后，是没有初始值的，我们可以使用`push`或者`pus_str`方法手动为他赋值，例如：
+
+```rust
+let mut str = String::new();
+str.push('h'); // push 方法只能传一个字符进去
+str.push('e');
+str.push('l');
+str.push('l');
+str.push('o');
+str.push_str(", world"); // push_str可以传入一个字符串字面量
+println!("{}", str);
+```
+
+当然我们可以直接将字符串相加来得到一个最终的字符串，例如：
+
+```rust
+let mut str1 = String::new();
+str1.push_str("hello");
+let mut str2 = String::new();
+str2.push_str("world");
+let str3 = str1 + &str2; // 实质是调用了内置的一个add(self, &str) -> String
+println!("{}", str3);
+println!("{}", str1); // 报错，这里str1的所有权转移到了str3;
+```
+
+但是这样显得非常得复杂，所以我们使用`format!`宏来快速拼接字符串，例如：
+
+```rust
+let mut str1 = String::new();
+str1.push_str("hello");
+let mut str2 = String::new();
+str2.push_str("world");
+let str3 = format!("{}{}", str1, str2);
+println!("{}", str3);
+```
+
+当我们我们也可以使用`String::from`快速地创建并且初始化值，例如：
+
+```rust
+let str: String = String::from("hello, world");
+```
+
+如果我们有一个字符串字面量，我们想把它转成`String`类型， 我们可以使用`to_string`去转化，例如：
+
+```rust
+let new_str: String = "hello, world".to_string();
+println!("{:?}", new_str);
+```
+
+字符串是不支持使用索引获取的，那我们应该如何获取字符串的某一段的值呢，这个时候我们可以使用之前提到过的字符串切片，例如：
+
+```rust
+let str_value = String::from("hello, world");
+let new_str = &str_value[0..1];
+println!("{}", new_str);
+```
+
+但是这里有个问题，因为rust是使用UTF-8作为编码格式，每一个字符占一个字节，但是如果Unicode标量的话，需要占两个字节，如果我们使用字符串切片不当就会报错，例如：
+
+```rust
+let str_value = String::from("дравствуйте");
+let str_slice = &str_value[0..1]; // 因为д占两个字节，这里我只取一个字节，就会发生panic，所以对字符串使用切片需要小心谨慎
+println!("{}", str_slice)
+```
+
+我们还可以批量遍历每个标量值，例如：
+
+```rust
+let str = String::from("Здравствуйте");
+for i in str.chars() {
+    println!("{}", i);
+}
+```
+
+也可以把每个字节都遍历出来，例如：
+
+```rust
+let str = String::from("Здравствуйте");
+for i in str.bytes() {
+    println!("{}", i);
+}
+```
+
+### 8.3 哈希映射
+
+在rust中，我们创建`HashMap`同样使用其中的`new`方法，因为该集合类型用的比较少，所以没有被rust预引入到作用域中，我们需要使用`use std::collections::HashMap;`手动引入，例如：
+
+```rust
+use std::collections::HashMap;
+let hm = HashMap::new();
+```
+
+如果我们想往里面添加值的话，我们使用`insert`方法，例如：
+
+```rust
+use std::collections::HashMap;
+let mut hm = HashMap::new();
+hm.insert(String::from("stephen"), 20);
+hm.insert(String::from("james"), 30);
+println!("{:?}", hm);
+```
+
+我们也可以使用`collect`方法把动态数组转化为哈希映射，其中`zip`的作用是创建一个元祖的数组，例如：
+
+```rust
+use std::collections::HashMap;
+
+let arr1 = vec![String::from("stephen"), String::from("james")];
+let arr2 = vec![20, 30];
+let ages: HashMap<_, _> = arr1.iter().zip(arr2.iter()).collect();
+println!("{:?}", ages)
+```
+
+我们同样也可以使用`get`方法，去获哈希映射里面的值，它返回的也是`Option`枚举，例如：
+
+```rust
+hm.get(&String::from("stephen")) // 20，这里我们需要使用值的引用
+```
+
+遍历哈希映射也是使用`for`， 例如：
+
+```rust
+for (key, value) in &hm {
+    println!("{}-{}", key, value);
+}
+// james-30
+// stephen-20
+```
+
+那我们应该怎么去覆盖之前的值呢？首先我们得先判断哈希映射里面有没有当前这个字段，这时候我们需要使用`entry`来判断，然后如果不存在的话，可以使用`or_insert`来插入值，有得话就会直接更新，例如：
+
+```rust
+use std::collections::HashMap;
+let mut hm = HashMap::new();
+hm.insert(String::from("stephen"), 20);
+hm.insert(String::from("james"), 30);
+hm.entry(String::from("kyrie")).or_insert(20);
+println!("{:?}", hm)
+```
+
 ## 9 错误处理
 
 ## 10 特征和声明周期

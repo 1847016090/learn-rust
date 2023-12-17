@@ -13,35 +13,122 @@
 // fn test(){
 //     self::
 // }
-mod restaurant {
-    pub mod free {
-        pub fn add_rice() {}
-        mod soup {
-            fn add_soup() {
-                crate::restaurant::money::add_vegetable()
-            }
-        }
-    }
-    mod money {
-        pub fn add_vegetable() {}
-        fn add_fruits() {}
-    }
-}
+// mod restaurant {
+//     pub mod free {
+//         pub fn add_rice() {}
+//         mod soup {
+//             fn add_soup() {
+//                 crate::restaurant::money::add_vegetable()
+//             }
+//         }
+//     }
+//     mod money {
+//         pub fn add_vegetable() {}
+//         fn add_fruits() {}
+//     }
+// }
 
 fn main() {
-    mod my_module {
-        fn test() {}
-        struct User {
-            age: i8,
-            name: String,
-            email: String,
-        }
-        enum Color {
-            Red,
-            Green,
-            Blue,
-        }
-    }
+    use std::collections::HashMap;
+    let mut hm = HashMap::new();
+    hm.insert(String::from("stephen"), 20);
+    hm.insert(String::from("james"), 30);
+    hm.entry(String::from("kyrie")).or_insert(20);
+    println!("{:?}", hm)
+    // for (key, value) in hm {
+    //     println!("{}-{}", key, value);
+    // }
+
+    // let mut hm = HashMap::new();
+    // hm.insert(String::from("stephen"), 20);
+    // hm.insert(String::from("james"), 30);
+    // println!("{:?}", hm);
+    // let str = String::from("Здравствуйте");
+    // for i in str.bytes() {
+    //     println!("{}", i);
+    // }
+    // let str_value = String::from("Здравствуйте");
+    // let str_slice = &str_value[0..1];
+    // println!("{}", str_slice)
+    // let mut str1 = String::new();
+    // str1.push_str("hello");
+    // let mut str2 = String::new();
+    // str2.push_str("world");
+    // let str3 = format!("{}{}", str1, str2);
+    // println!("{}", str3);
+    // println!("{}", str1);
+
+    // let str_value = String::from("hello, world");
+    // let new_str = &str_value[0..1];
+    // println!("{}", new_str);
+    // let new_str: String = "hello, world".to_string();
+    // println!("{:?}", new_str);
+    // let mut str = String::new();
+    // str.push('h');
+    // str.push('e');
+    // str.push('l');
+    // str.push('l');
+    // str.push('o');
+    // str.push_str(", world");
+    // println!("{}", str);
+    // let mut arr = vec![1, 2, 3];
+    // for i in &mut arr {
+    //     *i *= 2;
+    //     println!("{}", i);
+    // }
+
+    // match arr.get(5) {
+    //     Option::Some(i) => {
+    //         println!("{}", i);
+    //     }
+    //     Option::None => {
+    //         println!("出现数组越界的情况"); // match匹配会达到这里
+    //     }
+    // }
+
+    // #[derive(Debug)]
+    // enum StoreData {
+    //     Int(i32),
+    //     Float(f64),
+    //     Str(String),
+    //     Boolean(bool),
+    // }
+
+    // let mut arr: Vec<StoreData> = Vec::new();
+
+    // arr.push(StoreData::Float(1.0));
+    // arr.push(StoreData::Int(2));
+    // arr.push(StoreData::Str(String::from("这是一串字符")));
+    // arr.push(StoreData::Boolean(true));
+    // println!("{:?}", arr);
+
+    // let arr: Vec<i8> = vec![1, 2, 3];
+    // for i in arr {
+    //     println!("{}", i)
+    // }
+    // let mut arr: Vec<i32> = Vec::new();
+    // arr.push(1);
+    // arr.push(2);
+
+    // println!("{:?}", arr)
+
+    // enum  {
+
+    // }
+
+    // mod my_module {
+    //     fn test() {}
+    //     struct User {
+    //         age: i8,
+    //         name: String,
+    //         email: String,
+    //     }
+    //     enum Color {
+    //         Red,
+    //         Green,
+    //         Blue,
+    //     }
+    // }
 
     // self::public_module::test();
 
