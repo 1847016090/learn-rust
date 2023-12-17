@@ -889,9 +889,9 @@ let arr: Vec<i8> = Vec::new();
 如果我们想往里面存储值，我们可以调用该实例的`push`方法，但是我们得先将变量名声明为可变`mut`，例如：
 
 ```rust
-let arr: Vec<i8> = Vec::new();
-arr.push(1)
-arr.push(2)
+let mut arr: Vec<i8> = Vec::new();
+arr.push(1);
+arr.push(2);
 println!("{:?}", arr)
 ```
 
@@ -972,7 +972,7 @@ for i in &mut arr {
 
 ### 8.2 动态字符串
 
-接下来我们讲讲，如何创建一个动态字符串，它和动态数组有点类型，我们可以直接使用`String`上面的`new`方法，例如：
+接下来我们讲讲，如何创建一个动态字符串，它和动态数组有点类似，我们可以直接使用`String`上面的`new`方法，例如：
 
 ```rust
 let str: String = String::new();
@@ -1035,7 +1035,7 @@ let new_str = &str_value[0..1];
 println!("{}", new_str);
 ```
 
-但是这里有个问题，因为rust是使用UTF-8作为编码格式，每一个字符占一个字节，但是如果Unicode标量的话，需要占两个字节，如果我们使用字符串切片不当就会报错，例如：
+但是这里有个问题，因为rust是使用UTF-8作为编码格式，每一个字符占一个字节，但是如果是Unicode标量的话，它会占用两个字节，如果我们使用字符串切片不当就会报错，例如：
 
 ```rust
 let str_value = String::from("дравствуйте");
@@ -1043,7 +1043,7 @@ let str_slice = &str_value[0..1]; // 因为д占两个字节，这里我只取�
 println!("{}", str_slice)
 ```
 
-我们还可以批量遍历每个标量值，例如：
+我们还可以遍历每个标量值，例如：
 
 ```rust
 let str = String::from("Здравствуйте");
@@ -1063,7 +1063,7 @@ for i in str.bytes() {
 
 ### 8.3 哈希映射
 
-在rust中，我们创建`HashMap`同样使用其中的`new`方法，因为该集合类型用的比较少，所以没有被rust预引入到作用域中，我们需要使用`use std::collections::HashMap;`手动引入，例如：
+在rust中，我们创建`HashMap`同样使用其中的`new`方法，因为该集合类型用的比较少，所以不在rust的预导入模块中，我们需要使用`use std::collections::HashMap;`手动引入，例如：
 
 ```rust
 use std::collections::HashMap;
@@ -1094,7 +1094,7 @@ println!("{:?}", ages)
 我们同样也可以使用`get`方法，去获哈希映射里面的值，它返回的也是`Option`枚举，例如：
 
 ```rust
-hm.get(&String::from("stephen")) // 20，这里我们需要使用值的引用
+hm.get(&String::from("stephen")) // Some(20)，这里我们需要使用值的引用
 ```
 
 遍历哈希映射也是使用`for`， 例如：
@@ -1107,7 +1107,7 @@ for (key, value) in &hm {
 // stephen-20
 ```
 
-那我们应该怎么去覆盖之前的值呢？首先我们得先判断哈希映射里面有没有当前这个字段，这时候我们需要使用`entry`来判断，然后如果不存在的话，可以使用`or_insert`来插入值，有得话就会直接更新，例如：
+那我们应该怎么去覆盖之前的值呢？ 为了保险，我们得先判断哈希映射里面有没有当前这个字段，这时候我们需要使用`entry`来判断，然后如果不存在的话，可以使用`or_insert`来插入值，有得话就会直接更新，例如：
 
 ```rust
 use std::collections::HashMap;

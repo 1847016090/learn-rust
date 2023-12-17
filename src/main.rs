@@ -29,12 +29,16 @@
 // }
 
 fn main() {
-    use std::collections::HashMap;
-    let mut hm = HashMap::new();
-    hm.insert(String::from("stephen"), 20);
-    hm.insert(String::from("james"), 30);
-    hm.entry(String::from("kyrie")).or_insert(20);
-    println!("{:?}", hm)
+    let arr: Vec<i8> = Vec::new();
+    arr.push(1);
+    arr.push(2);
+    println!("{:?}", arr)
+    // use std::collections::HashMap;
+    // let mut hm = HashMap::new();
+    // hm.insert(String::from("stephen"), 20);
+    // hm.insert(String::from("james"), 30);
+    // hm.entry(String::from("kyrie")).or_insert(20);
+    // println!("{:?}", hm)
     // for (key, value) in hm {
     //     println!("{}-{}", key, value);
     // }
