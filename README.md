@@ -1120,4 +1120,164 @@ println!("{:?}", hm)
 
 ## 9 错误处理
 
+在Rust中，我们的错误处理有两种，分为可恢复处理和不可恢复处理。
+
+### 9.1 不可恢复错误处理
+
+#### 9.1.1 panic
+
+我们首先举一个例子，这个例子会引发panic的报错，例如：
+
+```rust
+let arr = vec![1, 2, 3];
+println!("{}", arr[100]);
+```
+
+当我们出现越界访问的时候，这个时候会触发panic报错，导致程序崩溃，我们在开发的时候应该尽量注意。
+
+#### 9.1.2 错误回溯
+
+当我们需要查看错误回溯的时候，我们可以使用`RUST_BACKTRACE=1 cargo run`命令，例如我们手动触发一个panic!报错：
+
+```rust
+fn main(){ // 在根文件中使用 panic! 抛出错误
+    panic!("Error...")
+}
+
+// 控制台执行命令  RUST_BACKTRACE=1 cargo run
+```
+
+### 9.2 可恢复错误处理
+
+我们在日常的开发中，更多的情况是，针对不同的错误进行不同的处理。
+
+#### 9.2.1 Result 枚举
+
+Rust在预模块中替我们引入`Result`枚举，里面包含了`OK`和`Err`两个变体的，`OK`表示正确变体，`Err`表示错误变体。接下来让我们来手动处理错误。
+
+#### 9.2.1 手动处理错误
+
+我们尝试写一段代码来打开一个不存在的文件，例如：
+
+```rust
+use std::fs::read;
+let f = read("./hello-world.txt");
+println!("{:?}", f)
+```
+
+因为我们这个文件是不存在的，所以这个时候会返回一个`Err`变体，这个时候我们可以使用`match`去处理，当我们的文件不同时，我们就创建这个文件，例如：
+
+```rust
+use std::fs;
+use std::io::ErrorKind;
+
+let f = fs::File::open("./hello-world.txt");
+match f {
+    Ok(data) => {
+        println!("{:?}", data);
+    }
+    Err(error) => {
+        return match error.kind() {
+            ErrorKind::NotFound => {
+                let create_data = fs::File::create("./hello-world.txt");
+                match create_data {
+                    Ok(file_data) => {
+                        println!("{:?}", file_data);
+                    }
+                    Err(err) => {
+                        println!("{}", err);
+                    }
+                }
+            }
+            _ => {
+                println!("{}", error);
+            }
+        };
+    }
+}
+```
+
+上面我们手动去处理读取文件失败的错误，然后创建文件，但是我们也要对创建文件去手动做错误处理，显得太麻烦了，于是我们可以用以下的方法去简化
+
+#### 9.2.1 unwrap和expect快速处理错误
+
+对于有返回`Result`枚举的方法、函数等，我们都可以使用`unwrap`和`expect`去处理。
+对于`unwrap`，就相当于我们使用`match`去处理错误，只不过它会返回一个Rust默认的错误，例如：
+
+```rust
+use std::fs;
+
+fs::File::open("./hello-world.txt").unwrap()
+```
+
+而`expect`，我们则可以穿入一个字符串，提示我们想提示的内容，例如：
+
+```rust
+fs::File::open("./hello-world.txt").expect("创建文件失败");
+```
+
+#### 9.2.1 向上返回结果和错误体
+
+对于刚刚嵌套的问题，我们可以将其拆分成为多个函数，然后把我们读取或者创建文件后的`Result`变体想外部抛出，然后上一层去获取并且处理。我们现封装一个读取文件的函数，例如：
+
+```rust
+use std::io::ErrorKind;
+use std::{fs, io};
+
+// 读取文件
+fn read_file(path: &str) -> Result<String, io::Error> {
+    let content = match fs::File::open(path) {
+        Ok(data) => data,
+        Err(error) => {
+            println!("{:?}", error);
+            return Err(error);
+        }
+    };
+    return Ok(content);
+}
+
+// 创建文件
+fn create_file(path: &str) {
+    match fs::File::create(path) {
+        Ok(data) => {
+            println!("{:?}", data);
+        }
+        Err(error) => {
+            println!("{:?}", error)
+        }
+    }
+}
+
+// 在最外层处理封装函数的逻辑
+let content = match read_file("./hello-world.txt") {
+    Ok(data) => data,
+    Err(error) => {
+        return match error.kind() {
+            ErrorKind::NotFound => {
+                create_file("./hello-world.txt");
+            }
+            _ => {
+                println!("其他错误");
+            }
+        };
+    }
+};
+```
+
+#### 9.2.1 优化处理错误处理(?)
+
+即使我们做了函数的封装，让嵌套变少了，但是还是显得很麻烦，那还没有更简单的方法呢？当然有，我们有语法糖`?`，它会将存储在Ok内部的值返回给外部的变量。如果出现了错误，?就会提前结束整个函数的执行，并将任何可能的Err值返回给函数调用者，例如：
+
+```rust
+fn read_file() -> Result<String, io::Error> {
+    let mut str: String = String::new();
+    fs::File::open("./hello-world.txt")?.read_to_string(&mut str)?;
+    println!("{}", str);
+    Ok(str)
+}
+```
+
+使用该方法，如果文件不存在，会自动把错误抛出，而不会panic崩溃。
+所有返回`Result`或者`Option`枚举的，我们都可以使用该语法糖处理。
+
 ## 10 特征和声明周期

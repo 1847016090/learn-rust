@@ -28,11 +28,95 @@
 //     }
 // }
 
+// use std::collections::HashMap;
+
+// use std::io;
+use std::io::{ErrorKind, Read};
+use std::{fs, io};
 fn main() {
-    let arr: Vec<i8> = Vec::new();
-    arr.push(1);
-    arr.push(2);
-    println!("{:?}", arr)
+    fn read_file() -> Result<String, io::Error> {
+        let mut str: String = String::new();
+        fs::File::open("./hello-world.txt")?.read_to_string(&mut str)?;
+        println!("{}", str);
+        Ok(str)
+    }
+    let content = read_file();
+    println!("{:?}", content);
+    // fn read_file(path: &str) -> Result<String, io::Error> {
+    //     let content = match fs::read_to_string(path) {
+    //         Ok(data) => data,
+    //         Err(error) => {
+    //             println!("{:?}", error);
+    //             return Err(error);
+    //         }
+    //     };
+    //     return Ok(content);
+    // }
+
+    // fn create_file(path: &str) {
+    //     match fs::File::create(path) {
+    //         Ok(data) => {
+    //             println!("{:?}", data);
+    //         }
+    //         Err(error) => {
+    //             println!("{:?}", error)
+    //         }
+    //     }
+    // }
+
+    // let content = match read_file("./hello-world.txt") {
+    //     Ok(data) => data,
+    //     Err(error) => {
+    //         return match error.kind() {
+    //             ErrorKind::NotFound => {
+    //                 create_file("./hello-world.txt");
+    //             }
+    //             _ => {
+    //                 println!("其他错误");
+    //             }
+    //         };
+    //     }
+    // };
+
+    // fs::read("./hello-world.txt").expect("创建文件失败");
+    // let f = fs::read("./hello-world.txt").unwrap();
+    // let f = fs::read("./hello-world.txt");
+    // match f {
+    //     Ok(data) => {
+    //         println!("{:?}", data);
+    //     }
+    //     Err(error) => {
+    //         return match error.kind() {
+    //             ErrorKind::NotFound => {
+    //                 fs::File::create("./hello-world.txt")?;
+    //             }
+    //             _ => {
+    //                 println!("{}", error);
+    //             }
+    //         };
+    //     }
+    // }
+    // println!("{:?}", f)
+    // use std::io::Result;
+    // let arr = vec![1, 2, 3];
+    // println!("{}", arr[100]);
+    // let arr = Result<i32, io::Error > {
+    //     Ok(32),
+    //     Err(V)
+    // }
+    // panic!("2222");
+    // let arr = vec![1, 2, 3];
+    // let arr2 = vec![5, 6, 7];
+    // let mut iteration = arr.iter();
+    // println!("{:#?}", &iteration.next().zip(Some(3)));
+    // println!("{:#?}", &iteration.next());
+    // println!("{:#?}", &iteration.next());
+    // println!("{:#?}", &iteration.next());
+    // println!("{:#?}", &iteration.next());
+    // let mut arr: Vec<i8> = Vec::new();
+    // arr.push(1);
+    // arr.push(2);
+    // println!("{:?}", arr)
     // use std::collections::HashMap;
     // let mut hm = HashMap::new();
     // hm.insert(String::from("stephen"), 20);
