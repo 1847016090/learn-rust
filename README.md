@@ -1133,7 +1133,7 @@ let arr = vec![1, 2, 3];
 println!("{}", arr[100]);
 ```
 
-当我们出现越界访问的时候，这个时候会触发panic报错，导致程序崩溃，我们在开发的时候应该尽量注意。
+当我们出现越界访问的时候，这个时候会触发panic报错，导致程序崩溃，我们在开发的时候应该尽量注意。这是个不可恢复的处理。
 
 #### 9.1.2 错误回溯
 
@@ -1155,7 +1155,7 @@ fn main(){ // 在根文件中使用 panic! 抛出错误
 
 Rust在预模块中替我们引入`Result`枚举，里面包含了`OK`和`Err`两个变体的，`OK`表示正确变体，`Err`表示错误变体。接下来让我们来手动处理错误。
 
-#### 9.2.1 手动处理错误
+#### 9.2.2 手动处理错误
 
 我们尝试写一段代码来打开一个不存在的文件，例如：
 
@@ -1199,7 +1199,7 @@ match f {
 
 上面我们手动去处理读取文件失败的错误，然后创建文件，但是我们也要对创建文件去手动做错误处理，显得太麻烦了，于是我们可以用以下的方法去简化
 
-#### 9.2.1 unwrap和expect快速处理错误
+#### 9.2.3 unwrap和expect快速处理错误
 
 对于有返回`Result`枚举的方法、函数等，我们都可以使用`unwrap`和`expect`去处理。
 对于`unwrap`，就相当于我们使用`match`去处理错误，只不过它会返回一个Rust默认的错误，例如：
@@ -1216,7 +1216,7 @@ fs::File::open("./hello-world.txt").unwrap()
 fs::File::open("./hello-world.txt").expect("创建文件失败");
 ```
 
-#### 9.2.1 向上返回结果和错误体
+#### 9.2.4 向上返回结果和错误体
 
 对于刚刚嵌套的问题，我们可以将其拆分成为多个函数，然后把我们读取或者创建文件后的`Result`变体想外部抛出，然后上一层去获取并且处理。我们现封装一个读取文件的函数，例如：
 
@@ -1264,7 +1264,7 @@ let content = match read_file("./hello-world.txt") {
 };
 ```
 
-#### 9.2.1 优化处理错误处理(?)
+#### 9.2.5 优化处理错误处理(?)
 
 即使我们做了函数的封装，让嵌套变少了，但是还是显得很麻烦，那还没有更简单的方法呢？当然有，我们有语法糖`?`，它会将存储在Ok内部的值返回给外部的变量。如果出现了错误，?就会提前结束整个函数的执行，并将任何可能的Err值返回给函数调用者，例如：
 
@@ -1280,4 +1280,297 @@ fn read_file() -> Result<String, io::Error> {
 使用该方法，如果文件不存在，会自动把错误抛出，而不会panic崩溃。
 所有返回`Result`或者`Option`枚举的，我们都可以使用该语法糖处理。
 
-## 10 特征和声明周期
+## 10 泛型、trait和生命周期
+
+### 10.1 泛型
+
+#### 10.1.1 什么是泛型
+
+在讲泛型之前，我们先来抽象一个公用的求最大值的函数，例如：
+
+```rust
+fn max(arr: &[i32]) -> i32 {
+    let mut largest: i32 = arr[0];
+    for item in arr {
+        if *item > largest {
+            largest = *item;
+        }
+    }
+    largest
+}
+let largest = max(&[100, 2, 3, 4]);
+println!("{}", largest);
+```
+
+通过上面的对于方法的一个抽象封装，我们可以同样来理解泛型。
+泛型其实就是对于类型的抽象。接下来，我们先来讲讲泛型的命名并对上面的函数再次进行泛型的封装。
+
+在Rust中，我们一般对泛型采用极为简洁的命名，**一个大写的字母**，比如:`T`,`U`等等，当然如果你的命名比较长，那就使用**大驼峰命名**。
+
+那现在我们就来实现对上面函数的类型使用泛型，例如：
+
+```rust
+fn max<T>(arr: &[T]) -> T {
+    let mut largest: T = arr[0];
+    for item in arr {
+        if *item > largest { // 比较会报错 consider restricting type parameter `T`: `:std::cmp::PartialOrd`
+            largest = *item;
+        }
+    }
+    largest
+}
+```
+
+**注意**
+使用泛型之后，我们上面的比较是会报错的，这是为什么呢？
+因为我们传入的泛型可以理解为，**可以传入任何类型**，但是不是所有类型都具有**比较**这个行为的，所以编译的时候，Rust就会给我们提示出来。
+
+这个问题，我们会在后面的**trait 特征**章节来解决。
+
+#### 10.1.2 函数 && 泛型
+
+在上面的列子中我们也看到了，怎么在一个函数中定义泛型。那就是在函数名之后使用`<>`尖括号将我们的泛型传入，这个时候我们就可以在函数中使用它了。例如：
+
+```rust
+fn test<T, U>() {} //可以传入多个泛型
+```
+
+#### 10.1.3 结构体 && 泛型
+
+在结构体里面使用泛型，我们需要在结构体名后面的使用`<>`尖括号将泛型传入，例如：
+
+```rust
+struct Point<T> {
+    x: T,
+    y: T,
+}
+```
+
+#### 10.1.4 枚举 && 泛型
+
+对于枚举类型，我们可以在枚举名后面使用`<>`尖括号将泛型传入，例如：
+
+```rust
+enum Color<T, U, K> {
+    Red(T),
+    Green(U),
+    Blue(K),
+}
+```
+
+#### 10.1.5 方法 && 泛型
+
+如果我们需要为一个方法添加泛型，我们需要在`impl`后使用`<>`尖括号将泛型传入，例如
+
+```rust
+#[derive(Debug)]
+struct Point<T> {
+    x: T,
+    y: T,
+}
+
+impl<T> Point<T> {
+    fn new(x: T, y: T) -> Point<T> {
+        Point { x, y }
+    }
+}
+
+let p: Point<f64> = Point::new(1.0, 2.0);
+println!("{:#?}", p);
+```
+
+### 10.2 特征(trait)
+
+#### 10.2.1 定义trait
+
+对于特征，可以简单理解为：对于不同或者相同类型的方法的抽象。
+我们使用`trait`来定义特征，例如：
+
+```rust
+trait Food {
+    fn eat(&self) -> ();
+    fn add() -> ();
+}
+
+struct Home;
+
+impl Food for Home {
+    fn eat(&self) -> () {
+        println!("eat vegetable")
+    }
+    fn add() -> () {
+        println!("add food")
+    }
+}
+
+struct Company;
+impl Food for Company {
+    fn eat(&self) -> () {
+        println!("eat buff")
+    }
+    fn add() -> () {
+        println!("add drinkings")
+    }
+}
+
+let home = Home {};
+home.eat();
+Home::add();
+
+let company = Company {};
+company.eat();
+Company::add();
+```
+
+我们在上面定义了一个特征`Food`，然后我们使用`impl for`的语法为类型`Home`，`Company`添加了这个特征，并且自定义了方法的内容
+
+#### 10.2.2 特征默认行为
+
+我们其实也可以给给特征定义默认的方法，例如：
+
+```rust
+trait Food {
+    // 定义方法
+    fn eat(&self) {
+        println!("eat anything")
+    }
+}
+```
+
+#### 10.2.3 特征约束
+
+我们首先简单说一下什么是**特征约束**，就是我们可以在泛型后面使用`:`加上我们定义的特征或者第三方的特征，当只有我们传入了实现了我们传入特征的类型，才能通过编译。
+
+我们定义的特征可以作为一个参数传入到函数或者方法中，例如：
+
+```rust
+trait Food {
+    // 定义方法
+    fn eat(&self) -> () {
+        println!("hh")
+    }
+}
+
+fn home_eat(item: impl Food) {
+    item.eat();
+}
+
+struct Home;
+// 当我们不为Home声明Food特征时，就会发生编译错误，因为我们对item做了行为约束
+impl Food for Home { 
+    fn eat(&self) -> () {
+        println!("eat")
+    }
+}
+home_eat(Home)
+```
+
+如果我们对多个参数都要做这种约束，那么上面的写法会相当冗杂，我们可以结合泛型来做约束，我们将上面的`home_eat`修改一下，加上泛型`T`并且使用特征`Food`去约束它，例如：
+
+```rust
+fn home_eat<T: Food>(item: T) {
+    item.eat();
+}
+```
+
+那如果我们需要对一个泛型实现多个特征的约束呢？我们可以直接使用`+`将多个特征加起来，例如：
+
+```rust
+trait Food {
+    fn eat(&self) -> ();
+}
+trait Water {
+    fn drink(&self) -> ();
+}
+
+fn home_eat<T: Food + Water>(item: T) {
+    // 这个时候，我们传入的Item必须实现Food的eat方法和Water的drink方法
+    item.eat();
+    item.drink();
+}
+
+struct Home;
+impl Food for Home {
+    fn eat(&self) -> () {
+        println!("eat")
+    }
+}
+impl Water for Home {
+    fn drink(&self) -> () {
+        println!("drink")
+    }
+}
+home_eat(Home);
+```
+
+上面的写法还可以使用`where`来优化，例如：
+
+```rust
+fn home_eat<T>(item: T)
+where
+    T: Food + Water,
+{
+    // 这个时候，我们传入的Item必须实现Food的eat方法和Water的drink方法
+    item.eat();
+    item.drink();
+}
+```
+
+我们还可以用特征来约束一个返回值，继续上面的修改，当我想返回一个带有`Food`特征的返回值时，我们可以这样：
+
+```rust
+fn home_eat<T>(item: T) -> impl Food // 只需要在末尾加上impl + 特征
+where
+    T: Food + Water,
+{
+    // 这个时候，我们传入的Item必须实现Food的eat方法和Water的drink方法
+    item.eat();
+    item.drink();
+    item // item是实现了Food特征的，所以返回是不会报错的
+}
+```
+
+上面我们都是对一个函数做约束，拿要是需要对我们为结构体声明的方法进行约束，那应该怎么做呢？只需要在`impl`后面的泛型加上特征约束即可，例如：
+
+```rust
+struct Rectangle<T> {
+    width: T,
+    height: T,
+}
+
+impl<T: Copy> Rectangle<T> {
+    fn new(x: T, y: T) -> Rectangle<T> {
+        Rectangle {
+            width: x,
+            height: y,
+        }
+    }
+}
+
+// 正确，因为整数实现了Copy特征，符合条件
+let rect = Rectangle::new(1, 1);
+
+// 报错，因为动态数组并没有实现Copy特征
+let rect1 = Rectangle::new(vec![1], vec![1]);
+```
+
+最后我们来看看我们最开始定义的`largest`函数，我们来使用泛型约束它，让它能够正确的进行比较，例如：
+
+ ```rust
+fn max<T>(arr: &[T]) -> T
+where
+    T: Copy + PartialOrd,
+{
+    let mut largest: T = arr[0];
+    for item in arr {
+        if *item > largest {
+            largest = *item;
+        }
+    }
+    largest
+}
+ ```
+
+我们给它加上了可以`Copy`可复制和`PartialOrd`可以比较的特征，我们在传入参数的时候就会对参数进行这两个特征的限制，就不能随意传值了。
+
+### 10.3 生命周期

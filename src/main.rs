@@ -30,18 +30,186 @@
 
 // use std::collections::HashMap;
 
+use std::fmt::Display;
+
 // use std::io;
-use std::io::{ErrorKind, Read};
-use std::{fs, io};
+// use std::io::{ErrorKind, Read};
+// use std::{fs, io};
 fn main() {
-    fn read_file() -> Result<String, io::Error> {
-        let mut str: String = String::new();
-        fs::File::open("./hello-world.txt")?.read_to_string(&mut str)?;
-        println!("{}", str);
-        Ok(str)
+    fn max<T>(arr: &[T]) -> T
+    where
+        T: Copy + PartialOrd,
+    {
+        let mut largest: T = arr[0];
+        for item in arr {
+            if *item > largest {
+                // 比较会报错 consider restricting type parameter `T`: `:std::cmp::PartialOrd`
+                largest = *item;
+            }
+        }
+        largest
     }
-    let content = read_file();
-    println!("{:?}", content);
+    // struct Rectangle<T> {
+    //     width: T,
+    //     height: T,
+    // }
+
+    // impl<T: Copy> Rectangle<T> {
+    //     fn new(x: T, y: T) -> Rectangle<T> {
+    //         Rectangle {
+    //             width: x,
+    //             height: y,
+    //         }
+    //     }
+    // }
+
+    // let rect = Rectangle::new(1, 1);
+    // //the trait bound `Vec<{integer}>: Copy` is not satisfied the trait `Copy` is not implemented for `Vec<{integer}>`
+    // let rect1 = Rectangle::new(vec![1], vec![1]);
+
+    // trait Food {
+    //     fn eat(&self) -> ();
+    // }
+
+    // struct Home;
+    // impl<T: Food> Home<T> {
+    //     fn () {
+
+    //     }
+    // }
+
+    // trait Water {
+    //     fn drink(&self) -> ();
+    // }
+
+    // fn home_eat<T>(item: T) -> impl Food
+    // where
+    //     T: Food + Water,
+    // {
+    //     // 这个时候，我们传入的Item必须实现Food的eat方法和Water的drink方法
+    //     item.eat();
+    //     item.drink();
+    //     item
+    // }
+
+    // struct Home;
+    // impl Food for Home {
+    //     fn eat(&self) -> () {
+    //         println!("eat")
+    //     }
+    // }
+    // impl Water for Home {
+    //     fn drink(&self) -> () {
+    //         println!("drink")
+    //     }
+    // }
+    // home_eat(Home);
+
+    // trait Food {
+    //     // 定义方法
+    //     fn eat(&self) -> () {
+    //         println!("hh")
+    //     }
+    // }
+
+    // fn home_eat<T: Food>(item: T) {
+    //     item.eat();
+    // }
+
+    // struct Home;
+    // impl Food for Home {
+    //     fn eat(&self) -> () {
+    //         println!("eat")
+    //     }
+    // }
+    // home_eat(Home)
+
+    // trait Food {
+    //     // 定义方法
+    //     fn eat(&self) -> () {
+    //         println!("hh")
+    //     }
+    //     // 定义函数
+    //     fn add() -> ();
+    // }
+
+    // struct Home;
+
+    // impl Food for Home {
+    //     fn eat(&self) -> () {
+    //         println!("eat vegetable")
+    //     }
+    //     fn add() -> () {
+    //         println!("add food")
+    //     }
+    // }
+
+    // struct Company;
+    // impl Food for Company {
+    //     // fn eat(&self) -> () {
+    //     //     println!("eat buff");
+    //     //     self.eat()
+    //     // }
+    //     fn add() -> () {
+    //         println!("add drinkings")
+    //     }
+    // }
+    // impl Company {
+    //     fn out(&self) {
+    //         self.eat();
+    //     }
+    // }
+    // let home = Home {};
+    // home.eat();
+    // Home::add();
+
+    // let company = Company {};
+    // company.eat();
+    // company.out();
+    // Company::add();
+    // struct Point<T> {
+    //     x: T,
+    //     y: T,
+    // }
+
+    // impl<T> Point<T> {
+    //     fn new(x: T, y: T) -> Point<T> {
+    //         Point { x, y }
+    //     }
+    // }
+
+    // let p: Point<f64> = Point::new(1.0, 2.0);
+    // println!("{:#?}", p);
+    // enum Color<T, U, K> {
+    //     Red(T),
+    //     Green(U),
+    //     Blue(K),
+    // }
+
+    // struct Point<T> {
+    //     x: T,
+    //     y: T,
+    // }
+    // fn test<T, U>() {}
+    // fn max<T>(arr: &[T]) -> T {
+    //     let mut largest: T = arr[0];
+    //     for item in arr {
+    //         if *item > largest {
+    //             largest = *item;
+    //         }
+    //     }
+    //     largest
+    // }
+    // let largest = max(&[100, 2, 3, 4]);
+    // println!("{}", largest);
+    // fn read_file() -> Result<String, io::Error> {
+    //     let mut str: String = String::new();
+    //     fs::File::open("./hello-world.txt")?.read_to_string(&mut str)?;
+    //     println!("{}", str);
+    //     Ok(str)
+    // }
+    // let content = read_file();
+    // println!("{:?}", content);
     // fn read_file(path: &str) -> Result<String, io::Error> {
     //     let content = match fs::read_to_string(path) {
     //         Ok(data) => data,
