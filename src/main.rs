@@ -30,25 +30,79 @@
 
 // use std::collections::HashMap;
 
+// use std::fmt::Display;
+
 use std::fmt::Display;
 
 // use std::io;
 // use std::io::{ErrorKind, Read};
 // use std::{fs, io};
 fn main() {
-    fn max<T>(arr: &[T]) -> T
+    fn longest<'a, T>(str1: &'a str, str2: &'a str, str3: T) -> &'a str
     where
-        T: Copy + PartialOrd,
+        T: Display,
     {
-        let mut largest: T = arr[0];
-        for item in arr {
-            if *item > largest {
-                // 比较会报错 consider restricting type parameter `T`: `:std::cmp::PartialOrd`
-                largest = *item;
-            }
+        println!("extra={}", str3);
+        if str1.len() > str2.len() {
+            str1
+        } else {
+            str2
         }
-        largest
     }
+    let s1 = String::from("stephen");
+    let s2 = String::from("james");
+    let long = longest(&s1, &s2, 2);
+    println!("{}", long);
+    // let str1: &'static str = "stephen";
+    // println!("{}", str1);
+    // #[derive(Debug)]
+    // struct User<'a> {
+    //     name: &'a str,
+    // }
+
+    // let user: User = User { name: "2222" };
+    // println!("{:#?}", user);
+    // let r;
+    // {
+    //     let w = String::from("value");
+    //     r = &w;
+    // }
+    // println!("{}", r);
+
+    // fn longest<'a>(str1: &'a str, str2: &'a str) -> &'a str {
+    //     if str1.len() > str2.len() {
+    //         str1
+    //     } else {
+    //         str2
+    //     }
+    // }
+    // fn longest(str1: &str, str2: &str) -> &str {
+    //     if str1.len() > str2.len() {
+    //         str1
+    //     } else {
+    //         str2
+    //     }
+    // }
+
+    // let s1 = String::from("stephen");
+    // let s2 = String::from("james");
+
+    // let longest_str = longest(&s1, &s2);
+    // println!("longest_str={}", longest_str)
+
+    // fn max<T>(arr: &[T]) -> T
+    // where
+    //     T: Copy + PartialOrd,
+    // {
+    //     let mut largest: T = arr[0];
+    //     for item in arr {
+    //         if *item > largest {
+    //             // 比较会报错 consider restricting type parameter `T`: `:std::cmp::PartialOrd`
+    //             largest = *item;
+    //         }
+    //     }
+    //     largest
+    // }
     // struct Rectangle<T> {
     //     width: T,
     //     height: T,
