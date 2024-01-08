@@ -32,27 +32,116 @@
 
 // use std::fmt::Display;
 
-use std::fmt::Display;
+// use std::fmt::Display;
 
 // use std::io;
 // use std::io::{ErrorKind, Read};
 // use std::{fs, io};
-fn main() {
-    fn longest<'a, T>(str1: &'a str, str2: &'a str, str3: T) -> &'a str
-    where
-        T: Display,
-    {
-        println!("extra={}", str3);
-        if str1.len() > str2.len() {
-            str1
+
+use std::env;
+use std::error::Error;
+use std::fs;
+use std::process;
+
+/**
+ * 命令行获取参数配置
+ */
+struct Config {
+    /**
+     * 匹配文字
+     */
+    match_text: String,
+    /**
+     * 文件名
+     */
+    file_name: String,
+}
+
+impl Config {
+    fn new(args: &[String]) -> Result<Config, &str> {
+        if args.len() < 3 {
+            return Err("输入的参数不能小于2位");
+        }
+        let match_text = args[1].clone();
+        let file_name = args[2].clone();
+        Ok(Config {
+            match_text,
+            file_name,
+        })
+    }
+}
+
+fn run(config: &Config) -> Result<(), Box<dyn Error>> {
+    let match_file = fs::read_to_string("./".to_string() + &config.file_name)?;
+
+    let match_file_text_arr: Vec<&str> = match_file.lines().collect();
+
+    let env_param: String = env::var("SENSITIVE")?;
+
+    for value in match_file_text_arr.iter() {
+        if env_param == "1" {
+            if value.contains(&config.match_text) {
+                println!("大小写敏感匹配成功:{}包含{}", value, &config.match_text);
+            } else {
+                println!("大小写敏感匹配失败:{}不包含{}", value, &config.match_text);
+            }
         } else {
-            str2
+            let n_value = value.to_lowercase(); // 都转为转为小写
+            let n_match_text = &config.match_text.to_lowercase(); // 都转为转为小写
+            if n_value.contains(n_match_text) {
+                println!("大小写不敏感匹配成功:{}包含{}", value, &config.match_text);
+            } else {
+                println!("大小写不敏感匹配失败:{}不包含{}", value, &config.match_text);
+            }
         }
     }
-    let s1 = String::from("stephen");
-    let s2 = String::from("james");
-    let long = longest(&s1, &s2, 2);
-    println!("{}", long);
+    Ok(())
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    let config: Config = Config::new(&args).unwrap_or_else(|err| {
+        println!("参数解析错误：{}", err);
+        process::exit(1)
+    });
+
+    run(&config).unwrap_or_else(|err| {
+        println!("文件或环境参数解析出错：{}", err);
+        process::exit(1);
+    });
+
+    // let match_text: &String =&args[1] ;
+    // let file_name = &args[2];
+
+    // let args: env::Args = env::args();
+    // let inputs: Vec<String> = args.collect();
+    // println!("{:?}", inputs);
+
+    // let check_file = fs::read_to_string("./filename.txt").expect("读取文件失败");
+    // // check_file
+    // let str: Vec<&str> = check_file.lines().collect();
+    // println!("{:?}", str);
+
+    // for argument in env::args() {
+    //     println!("{argument}");
+    // }
+
+    // fn longest<'a, T>(str1: &'a str, str2: &'a str, str3: T) -> &'a str
+    // where
+    //     T: Display,
+    // {
+    //     println!("extra={}", str3);
+    //     if str1.len() > str2.len() {
+    //         str1
+    //     } else {
+    //         str2
+    //     }
+    // }
+    // let s1 = String::from("stephen");
+    // let s2 = String::from("james");
+    // let long = longest(&s1, &s2, 2);
+    // println!("{}", long);
     // let str1: &'static str = "stephen";
     // println!("{}", str1);
     // #[derive(Debug)]

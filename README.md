@@ -1703,3 +1703,351 @@ let s2 = String::from("james");
 let long = longest(&s1, &s2, 2);
 println!("{}", long);
 ```
+
+## 11 编写检索字符串的工具
+
+学完了，1-10节内容，我们接下来将他们结合起来，使用Rust做一个检测字符串的命令工具。
+
+### 11.1 创建一个新项目
+
+首先我们来创建一个新项目，使用`cargo new minigrep`命令。我们进入`src/main.rs`主入口开发我们命令行工具的开发
+
+### 11.2 获取用户输入的参数
+
+我们在来看看怎么获取用户输入的参数，我们使用rust内置的模块`std::env`里面的`args`方法，例如：
+
+```rust
+use std::env
+let args = env::args();
+```
+
+此时我们执行命令`cargo run test filename.txt`，控制台打印出：
+
+```shell
+Args { inner: ["target/debug/hello-world", "test", "filename.txt"] }
+```
+
+我本来想使用`args.inner`去取里面的数据信息，但是`inner`是个私有属性无法获取。我再去看了看文档，知道返回值是一个迭代器(后面会详细讲到)，所以我们可以使用`collect`将它转为一个数组类型，例如：
+
+```rust
+let inputs: Vec<String> = args.collect();
+```
+
+这个时候重新值行刚才的命令，能正确打印出我们需要的值了，如下：
+
+```shell
+["target/debug/hello-world", "test", "filename.txt"]
+```
+
+我们可以看到第一个参数是**项目路径**，后面两个参数才是我们输入的参数，接下里我们就使用这两个参数来进行匹配。
+
+### 11.1 使用获取的参数读取文件
+
+#### 11.1.1 读取文件
+
+我们建立在最外层建立一个文件`filename.txt`，并且随意输入内容，如下：
+
+```
+test1
+test2
+```
+
+然后我们使用内置的文件系统模块`std::fs`来读取该文件，例如：
+
+```rust
+let check_file = fs::read_to_string("./filename.txt");
+println!("{:?}", check_file);
+```
+
+之前在枚举章节有讲到，文件读取是会返回`Result`枚举，里面包含了`Ok`和`Err`变体的，这里成功我们会拿到一个`Ok`变体包裹起来的数据，失败会直接`panic!`，我们再这里`expect`快速做一下错误处理。如下：
+
+```rust
+let check_file = fs::read_to_string("./filename.txt").expect("读取文件失败");
+println!("{:?}", check_file);
+```
+
+通过上述的处理，我们就可以拿到文件的内容了。
+
+#### 11.1.2 处理文件数据
+
+但是我们要匹配我们输入的字符串，这还远远不够，接下里我们将获取的文件数据，将每一行存储到动态数组里面，我们可以使用字符串的`lines`方法，例如：
+
+```rust
+check_file.lines();
+```
+
+`lines`方法会将文件内容以`\n`,`\r`来断开，并且生成一个迭代器，当然这个时候我们需要使用`collect`方法将其转为一个动态数组的
+
+#### 11.1.3 进行内容匹配
+
+接下来我们来完整的把整个流程写一遍，并且完成内容的匹配。如下：
+
+```rust
+let args: Vec<String> = env::args().collect();
+
+let match_text = &args[1];
+let file_name = &args[2];
+
+let match_file = fs::read_to_string("./".to_string() + file_name).expect("读取失败");
+
+let match_file_text_arr: Vec<&str> = match_file.lines().collect();
+
+for value in match_file_text_arr.iter() {
+    if value.contains(match_text) {
+        println!("匹配成功:{}包含{}", value, match_text);
+    } else {
+        println!("匹配失败:{}不包含{}", value, match_text);
+    }
+}
+```
+
+在代码的尾部，我们使用字符串的`contains`方法来判断当前行是否包含我要匹配的字符串，完成了最终的匹配功能。但是这个代码看起来杂乱不堪，并且全部放到主线程里面，不方便各种错误处理。我们接下来尝试去优化这部分代码。
+
+### 11.1 使用环境变量
+
+接下来我们尝试使用环境变量来判断匹配的字符串是否需要对大小写敏感。
+我们首先将刚刚创建文件中的第一行`test`改为`TeSt`。
+我们在执行命令的时候，在命令行前面传入我们的环境变量`SENSITIVE=1`，如下：
+
+```shell
+SENSITIVE=1 cargo run test filename.txt
+```
+
+然后，我们使用`env::vars(key)`来获取我们需要的环境变量，该方法返回的也是一个`Result`类型，所以我们需要做一个错误处理才能拿到值，如下：
+
+```rust
+let env_param = env::var("SENSITIVE").expect("获取失败");
+println!("env_param={}", env_param); // 1
+```
+
+接下里我们再完整地写一遍，加上环境变量，并且当`SENSITIVE=1`时，我们需要区分大小写，当`SENSITIVE=0`时，不需要区分。例如：
+
+```rust
+let args: Vec<String> = env::args().collect();
+
+let match_text = &args[1];
+let file_name = &args[2];
+
+let match_file = fs::read_to_string("./".to_string() + file_name).expect("读取失败");
+
+let match_file_text_arr: Vec<&str> = match_file.lines().collect();
+
+let env_param: String = env::var("SENSITIVE").expect("获取失败");
+
+for value in match_file_text_arr.iter() {
+    if env_param == "1" { // 我们使用环境变量来判断是否敏感匹配
+        if value.contains(match_text) {
+            println!("大小写敏感匹配成功:{}包含{}", value, match_text);
+        } else {
+            println!("大小写敏感匹配失败:{}不包含{}", value, match_text);
+        }
+    } else {
+        let n_value = value.to_lowercase(); // 都转为转为小写
+        let n_match_text = match_text.to_lowercase(); // 都转为转为小写
+        if n_value.contains(&n_match_text) {
+            println!("大小写不敏感匹配成功:{}包含{}", value, match_text);
+        } else {
+            println!("大小写不敏感匹配失败:{}不包含{}", value, match_text);
+        }
+    }
+}
+```
+
+### 11.1 优化：整合变量
+
+接下来我们继续优化一下有关系变量，我们使用结构体将他们整合一下，如下：
+
+```rust
+let args: Vec<String> = env::args().collect();
+
+/**
+ * 命令行获取参数配置
+ */
+struct Config<T> {
+    /**
+     * 匹配文字
+     */
+    match_text: T,
+    /**
+     * 文件名
+     */
+    file_name: T,
+}
+
+let config: Config<&str> = Config {
+    match_text: &args[1],
+    file_name: &args[2],
+};
+
+// let match_text: &String =&args[1] ;
+// let file_name = &args[2];
+
+let match_file = fs::read_to_string("./".to_string() + config.file_name).expect("读取失败");
+
+let match_file_text_arr: Vec<&str> = match_file.lines().collect();
+
+let env_param: String = env::var("SENSITIVE").expect("获取失败");
+
+for value in match_file_text_arr.iter() {
+    if env_param == "1" {
+        if value.contains(config.match_text) {
+            println!("大小写敏感匹配成功:{}包含{}", value, config.match_text);
+        } else {
+            println!("大小写敏感匹配失败:{}不包含{}", value, config.match_text);
+        }
+    } else {
+        let n_value = value.to_lowercase(); // 都转为转为小写
+        let n_match_text = config.match_text.to_lowercase(); // 都转为转为小写
+        if n_value.contains(&n_match_text) {
+            println!("大小写不敏感匹配成功:{}包含{}", value, config.match_text);
+        } else {
+            println!("大小写不敏感匹配失败:{}不包含{}", value, config.match_text);
+        }
+    }
+}
+```
+
+因为我们将输入的参数是有关系的，所以我们将它存储到了一个结构体中，然后在其他函数中使用。
+
+### 11.1 优化：封装函数、方法
+
+现在我们来将函数也单独抽离一下，我们首先来将获取命令行参数封装成一个函数，因为我们之前已经将变量整合到了一个结构体中，所以我们可以直接在这个结构体上面去定义方法，例如：
+
+```rust
+impl Config {
+    /**
+     * 直接为结构体定义一个new方法，之后可以直接获得一个config实例
+     */
+    fn new(args: &[String]) -> Config {
+        let match_text = args[1].clone();
+        let file_name = args[2].clone();
+        Config {
+            match_text,
+            file_name,
+        }
+    }
+}
+
+let config = Config::new(&args);
+// 其他使用到config的地方都需改为&config，否则会报错
+```
+
+我们将其他的逻辑都放到`run`函数里面，如下:
+
+```rust
+fn run(config: &Config) {
+    let match_file = fs::read_to_string("./".to_string() + &config.file_name).expect("读取失败");
+
+    let match_file_text_arr: Vec<&str> = match_file.lines().collect();
+
+    let env_param: String = env::var("SENSITIVE").expect("获取失败");
+
+    for value in match_file_text_arr.iter() {
+        if env_param == "1" {
+            if value.contains(&config.match_text) {
+                println!("大小写敏感匹配成功:{}包含{}", value, &config.match_text);
+            } else {
+                println!("大小写敏感匹配失败:{}不包含{}", value, &config.match_text);
+            }
+        } else {
+            let n_value = value.to_lowercase(); // 都转为转为小写
+            let n_match_text = &config.match_text.to_lowercase(); // 都转为转为小写
+            if n_value.contains(n_match_text) {
+                println!("大小写不敏感匹配成功:{}包含{}", value, &config.match_text);
+            } else {
+                println!("大小写不敏感匹配失败:{}不包含{}", value, &config.match_text);
+            }
+        }
+    }
+}
+```
+
+然后我们在主函数`main`中只处理简单的逻辑，如下:
+
+```rust
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    let config: Config = Config::new(&args);
+    run(&config);
+}
+```
+
+这样看起来简单多了。当然，当我们抽离了函数之后，我们需要对其做错误处理。接下来，我们来优化错误处理。
+
+### 11.1 优化：优化错误处理
+
+首先我们来优化一下结构体里面的`new`方法，我们使用`Result`枚举处理`new`方法，如下：
+
+```rust
+impl Config {
+    fn new(args: &[String]) -> Result<Config, &str> {
+        /**
+         * 判断命令行参数不能小于2
+         */
+        if args.len() < 3 {
+            return Err("输入的参数不能小于2位");
+        }
+        let match_text = args[1].clone();
+        let file_name = args[2].clone();
+        Ok(Config {
+            match_text,
+            file_name,
+        })
+    }
+}
+```
+
+然后我们在`main`函数中使用`process`处理，当出现参数解析错误的时候，我们直接退出整个程序，如下：
+
+```rust
+let config: Config = Config::new(&args).unwrap_or_else(|err| {
+    println!("参数解析错误：{}", err);
+    process::exit(1)
+});
+```
+
+对获取参数的方法进行错误优化之后，对用户更加友好了。
+
+紧接着我们来，对我们的`run`函数进行错误处理优化，如下：
+
+```rust
+fn run(config: &Config) -> Result<(), Box<dyn Error>> {
+    let match_file = fs::read_to_string("./".to_string() + &config.file_name)?;
+
+    let match_file_text_arr: Vec<&str> = match_file.lines().collect();
+
+    let env_param: String = env::var("SENSITIVE")?;
+
+    for value in match_file_text_arr.iter() {
+        if env_param == "1" {
+            if value.contains(&config.match_text) {
+                println!("大小写敏感匹配成功:{}包含{}", value, &config.match_text);
+            } else {
+                println!("大小写敏感匹配失败:{}不包含{}", value, &config.match_text);
+            }
+        } else {
+            let n_value = value.to_lowercase(); // 都转为转为小写
+            let n_match_text = &config.match_text.to_lowercase(); // 都转为转为小写
+            if n_value.contains(n_match_text) {
+                println!("大小写不敏感匹配成功:{}包含{}", value, &config.match_text);
+            } else {
+                println!("大小写不敏感匹配失败:{}不包含{}", value, &config.match_text);
+            }
+        }
+    }
+    Ok(())
+}
+```
+
+我们这里的处理很简单，就是使用于语法糖`?`将错误向上传递。`Box<dyn Error>`这个类型是我们第一次看到，它表示的意思是`Error`的`trait`类型。我们会在十七节讲到。
+
+然后我们在`main`函数中和上面处理保持一致，如下：
+
+```rust
+run(&config).unwrap_or_else(|err| {
+    println!("文件或环境参数解析出错：{}", err);
+    process::exit(1);
+});
+```
+
+这样我们就完成了整个优化处理。
