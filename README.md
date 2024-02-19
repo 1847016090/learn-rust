@@ -2051,3 +2051,244 @@ run(&config).unwrap_or_else(|err| {
 ```
 
 这样我们就完成了整个优化处理。
+
+## 12. 闭包与迭代器
+
+### 12.1闭包
+
+#### 12.1.1 闭包的构成
+
+闭包可以作为参数、返回值或者将其存储在一个变量中。
+
+我们先来举个例子来讲讲闭包的构成：
+
+```rust
+let y: i32 = 1;
+let get_sum = |x| x + y;
+let result = get_sum(1);
+println!("{}", result)
+```
+
+这里我们声明了一个闭包`get_sum`，它和函数的声明完全一样，只是我这是用`||`来作为闭包传参的入口，并且省略了`{}`，当然我们可以加上：
+
+```rust
+let get_sum = |x| { let sum = x + y; sum };
+```
+
+从上面的例子中我们会发现，闭包可以去**读取**环境中的变量，这是它和函数的区别
+
+#### 12.1.2 闭包的类型
+
+从上面的例子来看，其实我们并没有在闭包内部给它定义类型，其实Rust内部给我们推导了类型，例如：
+
+```rust
+let get_self = |x| x;
+get_self(1);
+get_self('1'); // error
+```
+
+当我们第一次传入了一个`i32`的数字类型，这个时候其实已经被默认推导成了`i32`的类型，当我们再传入一个不同类型的值，会编译出错。
+
+在我们声明一个闭包时，它会自动被推导为三种特征，怎么决定使用哪个特征，是看闭包内怎么去使用读区环境量的参数：
+
+- 所有的闭包都自动实现了 `FnOnce` 特征，因此任何一个闭包都至少可以被调用一次
+- **不对捕获变量改变**的闭包自动实现了 `Fn` 特征
+- **改变了捕获变量的值但是没有改变捕获变量所有权**的闭包自动实现了 `FnMut` 特征
+
+我们先来举一个`Fn`的列子：
+我们可以看到我们并没有对`y`值进行修改，所以这里会被推导为`Fn`类型；
+
+```rust
+let y = 1;
+let get_self = |x| x + y;
+```
+
+我们再来看一个`FnMut`的例子：
+这里我们在函数里面使用了引用来去修改环境参数的字符串，但是没有修改所有权，所以会被推导为`FnMut`。
+
+```rust
+let mut str = String::from("hello");
+let mut combine_str = || {
+    &str.push_str("world");
+};
+combine_str();
+println!("{:?}", str);
+```
+
+我们最后来看一个强制改变了捕获环境值所有权的用例，它会自动推导为`FnOnce`，这里我们使用了`move`关键字，他可以**将捕获的环境参数所有权强制移动到闭包内部**，例如：
+
+```rust
+let str = String::from("hello");
+let combine_str = move || str;
+combine_str();
+```
+
+刚刚我们举的例子都是闭包作为一个变量进行存储，我们接下里写一个将闭包作为参数传递的例子：
+
+```rust
+let s = String::from("hello");
+
+let update_str = || println!("{}", s);
+
+fn executeFn<T>(f: T)
+where
+    T: Fn() -> (),
+{
+    f();
+}
+
+executeFn(update_str);
+
+fn executeFnOnce<T>(f: T)
+where
+    T: FnOnce() -> (),
+{
+    f();
+}
+executeFnOnce(update_str);
+
+fn executeFnMut<T>(mut f: T)
+where
+    T: FnMut() -> (),
+{
+    f();
+}
+executeFnMut(update_str)
+```
+
+### 12.2 迭代器
+
+#### 12.1.1 创建迭代器
+
+首先我们先来创建一个迭代器，如下：
+
+```rust
+let arr =  vec![1,2,3];
+let iter_arr = arr.iter();
+```
+
+我们这里使用`iter`方法，实际是对`arr`数组的**不可变引用**，当我们先获取可变引用时，我们需要使用`iter_mut`方法，或者当我们想直接获取其所有权时，我们可以使用`into_iter`方法。
+
+#### 12.1.2 Iterator 和 next
+
+所以可迭代的类型都是实现了特征`Iterator`，并且实现`next`方法，让我们来看看`iterator`特征：
+
+```rust
+trait Iterator {
+    type Item;
+    fn next(&mut self) -> Option<Self::Item>;
+}
+```
+
+其中`Item`是一个关联类型，后续会详细讲到。这里我们实现的特征，需要实现`next`，执行`next`后，会消耗迭代器。
+
+#### 12.1.3 消耗迭代器
+
+接下里我们来讲讲怎么去消耗迭代器，我们首先创建一个迭代器，如：
+
+```rust
+let iter_arr = vec![1, 2, 3].iter();
+```
+
+然后我们来执行`sum`方法，它会去执行`next`方法，迭代每个元素，并且将其加在一起，并且返回得到一个总和，如：
+
+```rust
+let sum: i32 = iter_arr.sum();
+println!("{}", sum);
+```
+
+接下来我们来看看怎么用其他的方法来创建迭代器。
+
+#### 12.1.4 使用其他方法创建迭代器
+
+我们来使用`map`方法来将数组中每个值`+1`，如下：
+
+```rust
+let arr = vec![1, 2, 3];
+let iter_arr = arr.iter().map(|x| x + 1);
+println!("{:?}", iter_arr)
+```
+
+我们来看看打印值，如：
+
+```rust
+// Map { iter: Iter([1, 2, 3]) }
+```
+
+我们可以看到，我们的值并没有加1。这是因为我们的迭代器并且执行消耗，所以值不会变化，这里我们执行`collect`方法去消耗这个迭代器之后，会将其转化为一个动态数组，如：
+
+```rust
+let arr = vec![1, 2, 3];
+let iter_arr: Vec<i32> = arr.iter().map(|x| x + 1).collect();
+println!("{:?}", iter_arr) // [2,3,4]
+```
+
+#### 12.1.5 使用环境参数
+
+我们还可以去使用闭包的特性去使环境参数。比如，我们使用可迭代类型的`filter`方法，它会根据根据我们传入的值进行筛选，如果为`true`则返回，`false`不返回。例如：
+
+```rust
+#[derive(Debug)]
+struct User {
+    name: String,
+    age: i32,
+}
+let arr = vec![
+    User {
+        name: String::from("stephen"),
+        age: 18,
+    },
+    User {
+        name: String::from("kyrie"),
+        age: 34,
+    },
+    User {
+        name: String::from("kris"),
+        age: 22,
+    },
+];
+let less_age: i32 = 30;
+// 筛选出年纪小于less_age的用户
+let iter_arr: Vec<&User> = arr.iter().filter(|user| user.age < less_age).collect();
+println!("{:#?}", iter_arr);
+```
+
+这里我们写了一个简单的用例，根据环境参数`less_age`去使用`filter`方法去筛选，年纪小于`less_age`的用户。
+
+#### 12.1.6 自定义迭代器
+
+最后，我们来自定义一个迭代器，我们首先写一个结构体`Counter`，如：
+
+```rust
+struct Counter {
+    count: i32,
+}
+
+impl Counter {
+    fn new() -> Counter {
+        Counter { count: 0 }
+    }
+}
+
+impl Iterator for Counter {
+    type Item = i32;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.count = self.count + 1;
+        if self.count < 6 {
+            Some(self.count)
+        } else {
+            None
+        }
+    }
+}
+
+let mut counter = Counter::new();
+println!("{:?}", counter.next()); // 1
+println!("{:?}", counter.next()); // 2
+println!("{:?}", counter.next()); // 3
+println!("{:?}", counter.next()); // 4
+println!("{:?}", counter.next()); // 5
+println!("{:?}", counter.next()); // None
+```
+
+我们定义了一个结构体，并且为它声明了一个`new`方法，并且实现`Iterator特征`，然后我们去执行`next`方法，就可以可以拿到`1-5`的值。

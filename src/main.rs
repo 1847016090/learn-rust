@@ -38,78 +38,222 @@
 // use std::io::{ErrorKind, Read};
 // use std::{fs, io};
 
-use std::env;
-use std::error::Error;
-use std::fs;
-use std::process;
+// use std::env;
+// use std::error::Error;
+// use std::fs;
+// use std::process;
 
-/**
- * 命令行获取参数配置
- */
-struct Config {
-    /**
-     * 匹配文字
-     */
-    match_text: String,
-    /**
-     * 文件名
-     */
-    file_name: String,
-}
+// /**
+//  * 命令行获取参数配置
+//  */
+// struct Config {
+//     /**
+//      * 匹配文字
+//      */
+//     match_text: String,
+//     /**
+//      * 文件名
+//      */
+//     file_name: String,
+// }
 
-impl Config {
-    fn new(args: &[String]) -> Result<Config, &str> {
-        if args.len() < 3 {
-            return Err("输入的参数不能小于2位");
-        }
-        let match_text = args[1].clone();
-        let file_name = args[2].clone();
-        Ok(Config {
-            match_text,
-            file_name,
-        })
-    }
-}
+// impl Config {
+//     fn new(args: &[String]) -> Result<Config, &str> {
+//         if args.len() < 3 {
+//             return Err("输入的参数不能小于2位");
+//         }
+//         let match_text = args[1].clone();
+//         let file_name = args[2].clone();
+//         Ok(Config {
+//             match_text,
+//             file_name,
+//         })
+//     }
+// }
 
-fn run(config: &Config) -> Result<(), Box<dyn Error>> {
-    let match_file = fs::read_to_string("./".to_string() + &config.file_name)?;
+// fn run(config: &Config) -> Result<(), Box<dyn Error>> {
+//     let match_file = fs::read_to_string("./".to_string() + &config.file_name)?;
 
-    let match_file_text_arr: Vec<&str> = match_file.lines().collect();
+//     let match_file_text_arr: Vec<&str> = match_file.lines().collect();
 
-    let env_param: String = env::var("SENSITIVE")?;
+//     let env_param: String = env::var("SENSITIVE")?;
 
-    for value in match_file_text_arr.iter() {
-        if env_param == "1" {
-            if value.contains(&config.match_text) {
-                println!("大小写敏感匹配成功:{}包含{}", value, &config.match_text);
-            } else {
-                println!("大小写敏感匹配失败:{}不包含{}", value, &config.match_text);
-            }
-        } else {
-            let n_value = value.to_lowercase(); // 都转为转为小写
-            let n_match_text = &config.match_text.to_lowercase(); // 都转为转为小写
-            if n_value.contains(n_match_text) {
-                println!("大小写不敏感匹配成功:{}包含{}", value, &config.match_text);
-            } else {
-                println!("大小写不敏感匹配失败:{}不包含{}", value, &config.match_text);
-            }
-        }
-    }
-    Ok(())
-}
+//     for value in match_file_text_arr.iter() {
+//         if env_param == "1" {
+//             if value.contains(&config.match_text) {
+//                 println!("大小写敏感匹配成功:{}包含{}", value, &config.match_text);
+//             } else {
+//                 println!("大小写敏感匹配失败:{}不包含{}", value, &config.match_text);
+//             }
+//         } else {
+//             let n_value = value.to_lowercase(); // 都转为转为小写
+//             let n_match_text = &config.match_text.to_lowercase(); // 都转为转为小写
+//             if n_value.contains(n_match_text) {
+//                 println!("大小写不敏感匹配成功:{}包含{}", value, &config.match_text);
+//             } else {
+//                 println!("大小写不敏感匹配失败:{}不包含{}", value, &config.match_text);
+//             }
+//         }
+//     }
+//     Ok(())
+// }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    struct Counter {
+        count: i32,
+    }
 
-    let config: Config = Config::new(&args).unwrap_or_else(|err| {
-        println!("参数解析错误：{}", err);
-        process::exit(1)
-    });
+    impl Counter {
+        fn new() -> Counter {
+            Counter { count: 0 }
+        }
+    }
 
-    run(&config).unwrap_or_else(|err| {
-        println!("文件或环境参数解析出错：{}", err);
-        process::exit(1);
-    });
+    impl Iterator for Counter {
+        type Item = i32;
+        fn next(&mut self) -> Option<Self::Item> {
+            self.count = self.count + 1;
+            if self.count < 6 {
+                Some(self.count)
+            } else {
+                None
+            }
+        }
+    }
+
+    let mut counter = Counter::new();
+    println!("{:?}", counter.next());
+    println!("{:?}", counter.next());
+    println!("{:?}", counter.next());
+    println!("{:?}", counter.next());
+    println!("{:?}", counter.next());
+    println!("{:?}", counter.next());
+
+    // #[derive(Debug)]
+    // struct User {
+    //     name: String,
+    //     age: i32,
+    // }
+    // let arr = vec![
+    //     User {
+    //         name: String::from("stephen"),
+    //         age: 18,
+    //     },
+    //     User {
+    //         name: String::from("kyrie"),
+    //         age: 34,
+    //     },
+    //     User {
+    //         name: String::from("kris"),
+    //         age: 22,
+    //     },
+    // ];
+    // let less_age: i32 = 30;
+    // // 筛选出年纪小于less_age的用户
+    // let iter_arr: Vec<&User> = arr.iter().filter(|user| user.age < less_age).collect();
+    // println!("{:#?}", iter_arr);
+
+    // let arr = vec![1, 2, 3];
+    // let iter_arr: Vec<i32> = arr.iter().map(|x| x + 1).collect();
+    // println!("{:?}", iter_arr)
+    // let sum: i32 = arr.iter().sum();
+    // println!("{}", sum)
+    // trait Iterator {
+    //     type Item;
+    //     fn next(&mut self) -> Option<Self::Item>;
+    // }
+    // let arr = vec![1, 2, 3];
+    // let iter_arr = arr.iter();
+    // println!("{:?}", arr);
+    // struct Counter {
+    //     num: i32,
+    // }
+
+    // impl Iterator for Counter {
+    //     type Item;
+    //     fn next(&mut self) -> Option<Self::Item> {
+    //         let num = self.num + 1;
+    //         Counter { num }
+    //     }
+    // }
+
+    // let s = String::from("hello");
+
+    // let update_str = || println!("{}", s);
+
+    // fn executeFn<T>(f: T)
+    // where
+    //     T: Fn() -> (),
+    // {
+    //     f();
+    // }
+
+    // executeFn(update_str);
+
+    // fn executeFnOnce<T>(f: T)
+    // where
+    //     T: FnOnce() -> (),
+    // {
+    //     f();
+    // }
+    // executeFnOnce(update_str);
+
+    // fn executeFnMut<T>(mut f: T)
+    // where
+    //     T: FnMut() -> (),
+    // {
+    //     f();
+    // }
+    // executeFnMut(update_str)
+
+    // let mut str = String::from("hello");
+    // let mut combine_str = || {
+    //     &str.push_str("world");
+    // };
+    // combine_str();
+    // println!("{:?}", str);
+    // let y = 1;
+    // let mut get_self = |x| {
+    //     y = y + 1;
+    //     x + y
+    // };
+    // let x = get_self(1);
+    // let z = get_self(2);
+    // println!("{}", x);
+    // println!("{}", y);
+    // println!("{}", z)
+    // let str1: String = String::from("hello ");
+    // let combine_str = |x| str1.push_str(x);
+    // combine_str("world");
+
+    // println!("{:?}", str1);
+    // let get_self = |x| x;
+    // get_self(1);
+    // get_self(2);
+    // get_self('1');
+    // let y: i32 = 1;
+    // let get_sum = |x| x + y;
+    // let result = get_sum(1);
+    // println!("{}", result)
+    // fn get_self() {
+    //     let get_cache = |x| x;
+    //     let z = get_cache(2);
+    //     println!("{}", z);
+    // }
+
+    // get_self();
+
+    // let args: Vec<String> = env::args().collect();
+
+    // let config: Config = Config::new(&args).unwrap_or_else(|err| {
+    //     println!("参数解析错误：{}", err);
+    //     process::exit(1)
+    // });
+
+    // run(&config).unwrap_or_else(|err| {
+    //     println!("文件或环境参数解析出错：{}", err);
+    //     process::exit(1);
+    // });
 
     // let match_text: &String =&args[1] ;
     // let file_name = &args[2];
