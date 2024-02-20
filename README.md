@@ -2292,3 +2292,82 @@ println!("{:?}", counter.next()); // None
 ```
 
 我们定义了一个结构体，并且为它声明了一个`new`方法，并且实现`Iterator特征`，然后我们去执行`next`方法，就可以可以拿到`1-5`的值。
+
+### 12.3 使用迭代器、闭包改进I/O项目
+
+接下来，我们来使用学习的新内容来修改之前做的一个检索功能。
+
+#### 12.3.1 修改入参
+
+之前我们在声明`Config`的`new`方法时，我们使用到了一个叫`clone`克隆的方法，这是为了拿到传入参数的所有权方便后续操作，但是这个方法是很消耗性能的，所以我们这里我们使用迭代器去改造一下。我们先看看之前的这个方法：
+
+```rust
+impl Config {
+fn new(args: &[String]) -> Result<Config, &str> {
+    if args.len() < 3 {
+        return Err("输入的参数不能小于2位");
+    }
+    let match_text = args[1].clone(); // 消耗性能
+    let file_name = args[2].clone();
+    Ok(Config {
+        match_text,
+        file_name,
+    })
+}
+}
+```
+
+我们首先将我们的入参修改，我们之前传入的是一个动态字符串，现在我们直接传入一个迭代器：
+
+```rust
+Config::new(env::args())
+```
+
+并且我们需要在`new`方法中修改：
+
+```rust
+fn new(mut args: env::Args)
+```
+
+因为迭代器是要消耗每个元素的，所以我们需要加上`mut`。
+因为`env::arg()`获取到的第一个参数是项目，所以我们需要执行一下`arg.next()`。然后第二次执行`next`方法时，我们可以拿到我们需要匹配的值，第三次则可以拿到文件名。因为`next`拿到的是`Option`枚举，所以我们需要使用`match`去拿到最终的值，如：
+
+```rust
+impl Config {
+    fn new(mut args: env::Args) -> Result<Config, &'static str> {
+        // if args.len() < 3 {
+        //     return Err("输入的参数不能小于2位");
+        // }
+        // let match_text = args[1].clone();
+        // let file_name = args[2].clone();
+        args.next();
+        let match_text = match args.next() {
+            Some(text) => text,
+            None => return Err("未获取到匹配内容"),
+        };
+        let file_name = match args.next() {
+            Some(name) => name,
+            None => return Err("未获取到文件名"),
+        };
+        Ok(Config {
+            match_text,
+            file_name,
+        })
+    }
+}
+```
+
+#### 12.3.2 修改匹配
+
+还有一处，之前我们进行匹配的操作时，我们使用的`for`循环，现在我们直接使用`filter`方法，去过滤，直接省去`for`循环遍历这一步，例如：
+
+```rust
+fs::read_to_string().unwrap().lines().filter(|line| line.contains(match_text)).collect();
+```
+
+我们直接使用`lines`方法获取文件的迭代器，并且执行`filter`去完成过滤匹配，为什么在`rust`中，我们使用的更多的是迭代器还不是`for`循环呢？
+
+1. 迭代器是一种更高层次的抽象概念，避免我们在开发时疲于去声明、维护各个变量的状态以及处理循环中的逻辑
+2. 迭代器编译出来的是一种零开销底层代码，性能要优于`for`循环遍历
+
+所以在Rust中，我们经常看到迭代器的使用，并且我们也要习惯于这种写法。
