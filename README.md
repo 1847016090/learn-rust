@@ -2371,3 +2371,76 @@ fs::read_to_string().unwrap().lines().filter(|line| line.contains(match_text)).c
 2. 迭代器编译出来的是一种零开销底层代码，性能要优于`for`循环遍历
 
 所以在Rust中，我们经常看到迭代器的使用，并且我们也要习惯于这种写法。
+
+## 13 进一步认识Cargo和crate.io
+
+### 13.1 修改Cargo.toml默认配置
+
+在我们平时执行`cargo build`或者`cargo build --release`时(第一个命令开发时使用，第二个用于生产环境)，其实`Cargo.toml`里面已经替我们使用了默认配置，比如我们执行`cargo build`时，`Cargo.toml`里面默认执行：
+
+```rust
+// Cargo.toml
+[profile.dev]
+opt-level=0
+```
+
+`opt-level`的值范围时0-3，值越大表示`Rust`为你做的优化越多，也越费时间，当然我们开发是不需要关注打包优化的，只需要编译越快越好，所以它的默认值是0，但是当我们使用`--release`时，因为是要构建线上产物，所以它会替我们做最高优化所以`opt-level`默认为3。其他的默认配置可以[通过这里查询](https://doc.rust-lang.org/cargo/reference/config.html)。
+
+### 13.2 用更好的方式注释
+
+在我们之前，我们对于文档的注释使用`//`，但是这样的注释也仅仅是对于包细节的描述，接下我们讲两种其他的注释方式。他们都可以以`markdown`语法的方式解析。
+
+### 13.2.1 //
+
+`//~`表示的是对于整个包模块的注释。我们可以在`src`下面建立一个`lib.rs`文件，然后在文件顶部，写入：
+
+```rust
+//! # My Crate
+//! 仅供学习和参考
+```
+
+然后执行`cargo doc --open`我们会发现生成了包名以及这个包的注释
+
+### 13.2.2 ///
+
+当我们想对于模块中的某个函数或者块进行备注时，我们可以使用`///`，它同样可以使用`markdown`语法进行解析，并且最厉害的一点是，里面写的用例会被用作单元测试用，当你执行`cargo test`时，所有`///`里面的用例都会执行。在`lib.rs`中，我们来举个例子：
+
+```rust
+/// 传入值加一
+///
+/// # 用例
+///
+///  ```
+/// use hello_world::add_one;
+/// let y = 2;
+/// let result = add_one(1);
+/// assert_eq!(result, y)
+/// ```
+pub fn add_one(x: i32) -> i32 {
+    x + 1
+}
+```
+
+`markdown`里面含有代码块的地方，在执行`cargo test`后会被用作测试用例执行，并且执行通过。
+
+### 13.3 使用pub use导出公共api
+
+在我们之前的学习中，我们可以使用`pub`关键字去导出函数、枚举、结构体、模块，但是当别人想想引用包深处的一个函数、枚举、结构体时，需要`use crate::xx::xxx::xxx::xx::test`，在我们的文档中，用户很难去找到自己所需要的，这个时候，我们可以使用`pub use`将关键的函数等暴露在`root`处，用户可以直接看到并且使用，如：
+
+```rust
+//! # My Crate
+//! 仅供学习和参考
+pub use self::kinds::Color;
+
+pub mod kinds {
+    pub enum Color {
+        Red,
+        Green,
+        Blue,
+    }
+}
+```
+
+在我们使用`pub use`后，导出的文档会在文档顶部显示。并且，我们在代码中使用时，可以直接`use crate::Color`就能使用了。但是这样导出也会有个问题就是，可能会出现同名的类型，这个时候就需要开发者自己控制这种问题的出现。
+
+### 13.4 在crate.io上面注册用户

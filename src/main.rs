@@ -39,86 +39,89 @@
 // use std::{fs, io};
 
 // use std::env;
-use std::error::Error;
-use std::fs;
-use std::process;
+// use std::error::Error;
+// use std::fs;
+// use std::process;
 
-use std::env;
+// use std::env;
 
-/**
- * 命令行获取参数配置
- */
-struct Config {
-    /**
-     * 匹配文字
-     */
-    match_text: String,
-    /**
-     * 文件名
-     */
-    file_name: String,
-}
+// /**
+//  * 命令行获取参数配置
+//  */
+// struct Config {
+//     /**
+//      * 匹配文字
+//      */
+//     match_text: String,
+//     /**
+//      * 文件名
+//      */
+//     file_name: String,
+// }
 
-impl Config {
-    fn new(mut args: env::Args) -> Result<Config, &'static str> {
-        // if args.len() < 3 {
-        //     return Err("输入的参数不能小于2位");
-        // }
-        // let match_text = args[1].clone();
-        // let file_name = args[2].clone();
-        args.next();
-        let match_text = match args.next() {
-            Some(text) => text,
-            None => return Err("未获取到匹配内容"),
-        };
-        let file_name = match args.next() {
-            Some(name) => name,
-            None => return Err("未获取到文件名"),
-        };
-        Ok(Config {
-            match_text,
-            file_name,
-        })
-    }
-}
+// impl Config {
+//     fn new(mut args: env::Args) -> Result<Config, &'static str> {
+//         // if args.len() < 3 {
+//         //     return Err("输入的参数不能小于2位");
+//         // }
+//         // let match_text = args[1].clone();
+//         // let file_name = args[2].clone();
+//         args.next();
+//         let match_text = match args.next() {
+//             Some(text) => text,
+//             None => return Err("未获取到匹配内容"),
+//         };
+//         let file_name = match args.next() {
+//             Some(name) => name,
+//             None => return Err("未获取到文件名"),
+//         };
+//         Ok(Config {
+//             match_text,
+//             file_name,
+//         })
+//     }
+// }
 
-fn run(config: &Config) -> Result<(), Box<dyn Error>> {
-    let match_file = fs::read_to_string("./".to_string() + &config.file_name)?;
-    let match_file_text_arr: Vec<&str> = match_file.lines().collect();
-    let env_param: String = env::var("SENSITIVE")?;
+// fn run(config: &Config) -> Result<(), Box<dyn Error>> {
+//     let match_file = fs::read_to_string("./".to_string() + &config.file_name)?;
+//     let match_file_text_arr: Vec<&str> = match_file.lines().collect();
+//     let env_param: String = env::var("SENSITIVE")?;
 
-    for value in match_file_text_arr.iter() {
-        if env_param == "1" {
-            if value.contains(&config.match_text) {
-                println!("大小写敏感匹配成功:{}包含{}", value, &config.match_text);
-            } else {
-                println!("大小写敏感匹配失败:{}不包含{}", value, &config.match_text);
-            }
-        } else {
-            let n_value = value.to_lowercase(); // 都转为转为小写
-            let n_match_text = &config.match_text.to_lowercase(); // 都转为转为小写
-            if n_value.contains(n_match_text) {
-                println!("大小写不敏感匹配成功:{}包含{}", value, &config.match_text);
-            } else {
-                println!("大小写不敏感匹配失败:{}不包含{}", value, &config.match_text);
-            }
-        }
-    }
-    Ok(())
-}
+//     for value in match_file_text_arr.iter() {
+//         if env_param == "1" {
+//             if value.contains(&config.match_text) {
+//                 println!("大小写敏感匹配成功:{}包含{}", value, &config.match_text);
+//             } else {
+//                 println!("大小写敏感匹配失败:{}不包含{}", value, &config.match_text);
+//             }
+//         } else {
+//             let n_value = value.to_lowercase(); // 都转为转为小写
+//             let n_match_text = &config.match_text.to_lowercase(); // 都转为转为小写
+//             if n_value.contains(n_match_text) {
+//                 println!("大小写不敏感匹配成功:{}包含{}", value, &config.match_text);
+//             } else {
+//                 println!("大小写不敏感匹配失败:{}不包含{}", value, &config.match_text);
+//             }
+//         }
+//     }
+//     Ok(())
+// }
 
 fn main() {
+
     // let args: Vec<String> = env::args().collect();
 
-    let config: Config = Config::new(env::args()).unwrap_or_else(|err| {
-        println!("参数解析错误：{}", err);
-        process::exit(1)
-    });
+    // let config: Config = Config::new(env::args()).unwrap_or_else(|err| {
+    //     println!("参数解析错误：{}", err);
+    //     println!("参数解析错误：{}", err);
+    //     process::exit(1)
+    // });
 
-    run(&config).unwrap_or_else(|err| {
-        println!("文件或环境参数解析出错：{}", err);
-        process::exit(1);
-    });
+    // run(&config).unwrap_or_else(|err| {
+    //     println!("文件或环境参数解析出错：{}", err);
+    //     println!("文件或环境参数解析出错：{}", err);
+    //     process::exit(1);
+    // });
 
     // struct Counter {
     //     count: i32,
