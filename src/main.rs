@@ -108,6 +108,23 @@
 // }
 
 fn main() {
+    #[derive(Debug)]
+    enum List {
+        Cons(i32, Box<List>),
+        Nil,
+    }
+
+    let list = List::Cons(
+        1,
+        Box::new(List::Cons(2, Box::new(List::Cons(3, Box::new(List::Nil))))),
+    );
+
+    println!("{:#?}", list);
+
+    // let box = Box::new(5);
+
+    // let box = Box::new(3);
+    // println!("{}", box)
 
     // let args: Vec<String> = env::args().collect();
 
