@@ -107,19 +107,66 @@
 //     Ok(())
 // }
 
+use std::mem::drop;
 fn main() {
-    #[derive(Debug)]
-    enum List {
-        Cons(i32, Box<List>),
-        Nil,
+    use std::ops::Deref;
+    struct MyCustomPointer {
+        data: String,
     }
 
-    let list = List::Cons(
-        1,
-        Box::new(List::Cons(2, Box::new(List::Cons(3, Box::new(List::Nil))))),
-    );
+    impl Drop for MyCustomPointer {
+        fn drop(&mut self) {
+            println!("自定义操作")
+        }
+    }
 
-    println!("{:#?}", list);
+    let m = MyCustomPointer {
+        data: String::from("hello"),
+    };
+
+    drop(m);
+
+    println!("结束")
+    // struct MyBox<T>(T);
+    // impl<T> MyBox<T> {
+    //     fn new(d: T) -> MyBox<T> {
+    //         MyBox(d)
+    //     }
+    // }
+
+    // impl<T> Deref for MyBox<T> {
+    //     type Target = T;
+    //     fn deref(&self) -> &T {
+    //         &self.0
+    //     }
+    // }
+
+    // let x = MyBox::new(String::from("world"));
+
+    // fn hello(name: &str) {
+    //     println!("{}", name);
+    // }
+
+    // hello(&x);
+
+    // let y = Box::new(5);
+    // assert_eq!(5, *y);
+    // let y = 5;
+    // let x = &y;
+    // assert_eq!(5, x);
+    // assert_eq!(5, *x);
+    // #[derive(Debug)]
+    // enum List {
+    //     Cons(i32, Box<List>),
+    //     Nil,
+    // }
+
+    // let list = List::Cons(
+    //     1,
+    //     Box::new(List::Cons(2, Box::new(List::Cons(3, Box::new(List::Nil))))),
+    // );
+
+    // println!("{:#?}", list);
 
     // let box = Box::new(5);
 

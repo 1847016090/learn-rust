@@ -2648,3 +2648,145 @@ println!("{:#?}", list);
 ```
 
 新的变体`Cons`只需要一部分存储`i32`类型和一部分存储装箱指针的数据空间。因此是可以Rust计算出存储大小，然后正确编译。
+
+### 14.3 通过将Deref将智能指针视为常规引用
+
+实现`Deref`特征可以为我们自动实现**解引用运算符**的行为。然后我们可以将智能指针视作普通的引用来处理。
+
+#### 14.3.1 使用解引用运算符跳转到指针指向的值
+
+我们首先来看看使用引用和解引用的例子：
+
+```rust
+let y = 5;
+let x = &y;
+assert_eq!(5, x); // error 
+assert_eq!(5, *x); // right
+```
+
+其中第一个比较，会发生编译报错，提示我们不能将`integer`和`&{integer}`进行比较。
+
+接下来我们在来试试将`Box`装箱当做常规的引用，如下：
+
+```rust
+let y = Box::new(5);
+assert_eq!(5, *y);
+```
+
+上述的代码依然能够通过编译，说明我们的解引用操作符也能够跟踪智能指针并且获取它指向的值。
+
+接下来我们尝试着自定义一个我们自己的智能指针。
+刚刚我们有提到，需要实现`Deref`才能够实现外部的解引用操作。
+我们来定义一个`MyBox`结构体：
+
+```rust
+struct MyBox<T>(T);
+impl<T> MyBox<T> {
+    fn new(d: T) -> MyBox<T> {
+        MyBox(d)
+    }
+}
+```
+
+`MyBox`和`Box`有着相同的方法，然后我们来为它实现`Deref`的行为：
+
+```rust
+impl<T> Deref for MyBox<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
+
+let x = MyBox::new(5);
+assert_eq!(5, *x);
+```
+
+我们在deref的方法体中填入了`&self.0`(因为MyBox是一个元祖结构体所以`.0`就能获取第一项的值)，这意味着deref会返回一个指向值的引用，进而允许调用者通过`*运算符`，(我们在上述的`*x`会被隐式转化为`*(x.deref())`)
+
+**解引用转换**是Rust为函数和方法的参数提供的一种便捷特性。Rust通过实现解引用转换功能，使程序员在调用函数或方法时无须多次显式地使用&和*运算符来进行引用和解引用操作。例如：
+
+```rust
+let x = MyBox::new(String::from("world"));
+
+fn hello(name: &str) {
+    println!("{}", name);
+}
+
+hello(&x);
+```
+
+上面的自动转化原理是：Rust先调用x的`deref`方法将其转化为`&String::from('world')`，然后`String`内置的`deref`会将其转化为字符串切片`&str`，然后就能得到我们的`world`值。
+如果没有自动转化，那我们就需要写下面复杂的代码去获取：
+
+```rust
+fn main() {
+    let m = MyBox::new(String::from("Rust"));
+    hello(&(*m)[..]);
+}
+```
+
+#### 14.3.2 解引用转换与可变性
+
+Rust会在类型与trait满足下面3种情形时执行解引用转换：
+
+- 当T: Deref<Target=U>时，允许&T转换为&U。
+- 当T: DerefMut<Target=U>时，允许&mut T转换为&mut U。
+- 当T: Deref<Target=U>时，允许&mut T转换为&U。
+
+情形三则有些微妙：Rust会将一个可变引用自动地转换为一个不可变引用。但这个过程绝对不会逆转，也就是说不可变引用永远不可能转换为可变引用。因为按照借用规则，如果存在一个可变引用，那么它就必须是唯一的引用（否则程序将无法通过编译）。将一个可变引用转换为不可变引用肯定不会破坏借用规则，但将一个不可变引用转换为可变引用则要求这个引用必须是唯一的，而借用规则无法保证这一点。
+
+### 14.4 使用Drop trait 在清理时运行代码
+
+Drop Trait 允许我们在变量离开作用域时执行自定义的操作。它常常被用来释放诸如文件、网络连接等资源。我们来实现一个拥有Drop行为的结构体，Drop trait要求实现一个接收self可变引用作为参数的drop函数， 如：
+
+```rust
+struct MyCustomPointer {
+    data: String,
+}
+
+impl Drop for MyCustomPointer {
+    fn drop(&mut self) {
+        println!("自定义操作")
+    }
+}
+
+let m = MyCustomPointer {
+    data: String::from("hello"),
+};
+println!("结束")
+````
+
+我们会发现执行的顺序是：
+
+```rust
+// 1.结束
+// 2.自定义操作
+```
+
+因为是离开作用域时执行，所以`drop`里面的打印会晚一些。
+
+但是我们可以通过单独使用`std::mem::drop`提前丢弃值，如下：
+
+```rust
+use std::ops::Deref;
+struct MyCustomPointer {
+    data: String,
+}
+
+impl Drop for MyCustomPointer {
+    fn drop(&mut self) {
+        println!("自定义操作")
+    }
+}
+
+let m = MyCustomPointer {
+    data: String::from("hello"),
+};
+
+drop(m);
+
+println!("结束")
+````
+
+这个时候，我们自定义的操作就能提前执行了，因为它被提前释放了。
