@@ -107,26 +107,30 @@
 //     Ok(())
 // }
 
-use std::mem::drop;
 fn main() {
-    use std::ops::Deref;
-    struct MyCustomPointer {
-        data: String,
-    }
+    use std::{cell::RefCell, mem::drop};
 
-    impl Drop for MyCustomPointer {
-        fn drop(&mut self) {
-            println!("自定义操作")
-        }
-    }
+    let x = RefCell::new(vec![1, 2, 3]);
+    x.borrow_mut().push(1);
+    println!("{:?}", x)
+    // use std::ops::Deref;
+    // struct MyCustomPointer {
+    //     data: String,
+    // }
 
-    let m = MyCustomPointer {
-        data: String::from("hello"),
-    };
+    // impl Drop for MyCustomPointer {
+    //     fn drop(&mut self) {
+    //         println!("自定义操作")
+    //     }
+    // }
 
-    drop(m);
+    // let m = MyCustomPointer {
+    //     data: String::from("hello"),
+    // };
 
-    println!("结束")
+    // drop(m);
+
+    // println!("结束")
     // struct MyBox<T>(T);
     // impl<T> MyBox<T> {
     //     fn new(d: T) -> MyBox<T> {

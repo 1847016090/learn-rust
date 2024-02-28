@@ -2787,6 +2787,92 @@ let m = MyCustomPointer {
 drop(m);
 
 println!("结束")
-````
+```
 
 这个时候，我们自定义的操作就能提前执行了，因为它被提前释放了。
+
+### 14.5 `RefCell<T>`和内部可变性模式
+
+首先我们来了解一下什么是**内部可变性模式**
+内部可变性是Rust的设计模式之一，它**允许你在只持有不可变引用的前提下对数据进行修改**
+
+而`RefCell<T>`是内部可变性模式的实践。它代表了其持有数据的唯一所有权。
+
+想想我们之前学习的借用规则：
+
+- 在任何给定的时间里，你要么只能拥有一个可变引用，要么只能拥有任意数量的不可变引用
+- 引用总是有效的
+
+对于使用`一般引用和Box<T>`的代码，Rust会在编译阶段强制代码遵守这些借用规则。
+而对于使用`RefCell<T>`的代码，Rust则只会在运行时检查这些规则，并在出现违反借用规则的情况下触发panic来提前中止程序。
+
+下面是对于`Rc<T>`,`Box<T>`以及`RefCell<T>`使用场景：
+
+- `Rc<T>`允许一份数据有多个所有者，而`Box<T>`和`RefCell<T>`都只有一个所有者。
+- `Box<T>`允许在编译时检查的可变或不可变借用，`Rc<T>`仅允许编译时检查的不可变借用，`RefCell<T>`允许运行时检查的可变或不可变借用。
+- 由于`RefCell<T>`允许我们在运行时检查可变借用，所以即便`RefCell<T>`本身是不可变的，我们仍然能够更改其中存储的值。
+
+#### 14.5.1 内部可变性：可变地借用一个不可变的值
+
+借用规则的一个推论是，你无法可变地借用一个不可变的值。
+我们来写个例子看看：
+
+```rust
+let x = vec![1, 2, 3];
+x.push(1); // error cannot borrow `x` as mutable, as it is not declared as mutable
+x.push(1);
+```
+
+上面这段代码明显就违背了我们的借用规则，不能可变借用一个不可变的值。但是在某些特定情况下，我们也会需要一个值在对外保持不可变性的同时能够在方法内部修改自身。我们来写一个使用`RefCell<T>`修改不可变值的例子：
+
+```rust
+use std::{cell::RefCell, mem::drop};
+
+let x = RefCell::new(vec![1, 2, 3]);
+x.borrow_mut().push(1);
+println!("{:?}", x)
+```
+
+我们使用`RefCell<T>`包裹一层我们初始化的值，然后使用`borrow_mut`方法去修改原数据的值。这种场景项目中不多，但是遇到的话，我们可以保证安全性的情况下考虑使用它来解决。
+
+#### 14.5.2 将`Rc<T>`和`RefCell<T>`结合使用来实现一个拥有多重所有权的可变数据
+
+将`RefCell<T>`和`Rc<T>`结合使用是一种很常见的用法。
+`Rc<T>`允许多个所有者持有同一数据，但只能提供针对数据的不可变访问。如果我们在`Rc<T>`内存储了`RefCell<T>`，那么就可以定义出拥有多个所有者且能够进行修改的值了
+
+例如：
+
+```rust
+#[derive(Debug)]
+enum List {
+    Cons(Rc<RefCell<i32>>, Rc<List>),
+    Nil,
+}
+
+use crate::List::{Cons, Nil};
+use std::rc::Rc;
+use std::cell::RefCell;
+
+fn main() {
+    let value = Rc::new(RefCell::new(5));
+
+    let a = Rc::new(Cons(Rc::clone(&value), Rc::new(Nil)));
+
+    let b = Cons(Rc::new(RefCell::new(6)), Rc::clone(&a));
+    let c = Cons(Rc::new(RefCell::new(10)), Rc::clone(&a));
+
+    *value.borrow_mut() += 10;
+
+    println!("a after = {:?}", a);
+    println!("b after = {:?}", b);
+    println!("c after = {:?}", c);
+}
+```
+
+打印之后，我们会发现，这三个值都发生了变化：
+
+```rust
+// a after = Cons(RefCell { value: 15 }, Nil)
+// b after = Cons(RefCell { value: 6 }, Cons(RefCell { value: 15 }, Nil))
+// c after = Cons(RefCell { value: 10 }, Cons(RefCell { value: 15 }, Nil))
+```
