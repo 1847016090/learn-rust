@@ -107,12 +107,37 @@
 //     Ok(())
 // }
 
-fn main() {
-    use std::{cell::RefCell, mem::drop};
+use std::thread::JoinHandle;
 
-    let x = RefCell::new(vec![1, 2, 3]);
-    x.borrow_mut().push(1);
-    println!("{:?}", x)
+fn main() {
+    use std::thread;
+    let v = vec![1, 2, 3];
+
+    let handle = thread::spawn(move || {
+        println!("{:?}", v);
+    });
+
+    drop(v);
+
+    handle.join().unwrap();
+
+    // let handle = thread::spawn(|| {
+    //     for i in 1..10 {
+    //         println!("【新】线程中的数据：{}", i);
+    //         thread::sleep(Duration::from_millis(1))
+    //     }
+    // });
+    // handle.join().unwrap();
+    // for i in 1..5 {
+    //     println!("【主】线程中的数据：{}", i);
+    //     thread::sleep(Duration::from_millis(1))
+    // }
+
+    // use std::{cell::RefCell, mem::drop};
+
+    // let x = RefCell::new(vec![1, 2, 3]);
+    // x.borrow_mut().push(1);
+    // println!("{:?}", x)
     // use std::ops::Deref;
     // struct MyCustomPointer {
     //     data: String,
