@@ -3043,3 +3043,131 @@ handle.join().unwrap();
 ```
 
 这个时候能成功编译，并且`v`的所有权已经移交到闭包内。
+
+### 15.2 使用消息传递在线程间转移数据
+
+Rust在标准库中实现了一个名为通道（channel）的编程概念，它可以被用来实现基于消息传递的并发机制。
+
+通道由**发送者**和**接受者**组成。某一处代码可以通过调用发送者的方法来传送数据，而另一处代码则可以通过检查接收者来获取数据。当你丢弃了发送者或接收者的任何一端时，我们就称相应的通道被关闭（closed）了
+
+接下来我们编写两个线程，一个用于发送消息，另外一个用于接受消息。
+
+```rust
+use std::{sync::mpsc, thread};
+
+let (tx, rx) = mpsc::channel();
+
+thread::spawn(move || {
+    let val = String::from("hello world");
+    tx.send(val).unwrap();
+});
+
+let receive_val = rx.recv().unwrap();
+println!("{}", receive_val);
+```
+
+上面代码使用`mpsc::channel()`创建消息通道，其中`mpsc`表示`multiple producer，single consumer`。它会返回一个元祖类型，第一项表示**消息发送者**，第二项表示消息接受者。
+
+通道的接收端有两个可用于获取消息的方法：`recv`和`try_recv`。我们使用的recv（也就是receive的缩写）会阻塞主线程的执行直到有值被传入通道。`try_recv`方法不会阻塞线程，它会立即返回`Result<T,E>`，当线程需要一边接受消息一边完成其他工作时我们可以使用`try_recv`。我们可以编写出一个不断调用try_recv方法的循环，并在有消息到来时对其进行处理，而在没有消息时执行。
+
+### 15.2.1 通道和所有权转
+
+所有权规则在消息传递的过程中扮演了至关重要的角色，因为它可以帮助你写出安全的并发代码。接着上面的例子，我们在线程里面去打印`val`。
+
+```rust
+use std::{sync::mpsc, thread};
+
+let (tx, rx) = mpsc::channel();
+
+thread::spawn(move || {
+    let val = String::from("hello world");
+    tx.send(val).unwrap();
+    println!("{}", val); // 报错，这里会发生所有权的转移
+});
+
+let receive_val = rx.recv().unwrap();
+println!("{}", receive_val);
+```
+
+这里`send`函数会获取`val`的所有权，并且在参数传递时将它转移给接受者。
+所有权帮我们规避了一个大问题：
+一旦这个值被发送到了另外一个线程中，那个线程就可以在我们尝试重新使用这个值之前修改或丢弃它。这些修改极有可能造成不一致或产生原本不存在的数据，最终导致错误或出乎意料的结果。
+
+### 15.2.2 发送多个值并观察接收者的等待过程
+
+我们再来写一个发送多个值的用例：
+
+```rust
+let (tx, rx) = mpsc::channel();
+
+thread::spawn(move || {
+    let arr = vec![String::from("hello"), String::from("world")];
+    for val in arr {
+        tx.send(val).unwrap();
+        thread::sleep(Duration::from_secs(1));
+    }
+});
+
+for receive_val in rx {
+    println!("接受到：{}", receive_val);
+}
+```
+
+在主线程中，我们会将rx视作迭代器，遍历拿到接受的值。我们并没有在主线程的for循环中执行暂停或延迟指令，这也就表明主线程确实是在等待接收新线程中传递过来的值。
+
+### 15.2.3 通过克隆发送者创建多个生产者
+
+上面的例子都是一个生产者发送消息，接下来我们试着创建多个生产者来发送消息。
+
+```rust
+use std::time::Duration;
+use std::{sync::mpsc, thread};
+let (tx, rx) = mpsc::channel();
+
+// 第二个生产者
+let tx1 = mpsc::Sender::clone(&tx);
+
+// 线程1
+thread::spawn(move || {
+    let arr = vec![String::from("hi"), String::from("ni hao")];
+    for val in arr {
+        tx.send(val).unwrap();
+        thread::sleep(Duration::from_secs(1));
+    }
+});
+
+// 线程2
+thread::spawn(move || {
+    let arr = vec![String::from("hello"), String::from("world")];
+    for val in arr {
+        tx1.send(val).unwrap();
+        thread::sleep(Duration::from_secs(1));
+    }
+});
+
+for receive_val in rx {
+    println!("接受到：{}", receive_val);
+}
+
+// 打印
+// 接受到：hello
+// 接受到：hi
+// 接受到：world
+// 接受到：ni hao
+```
+
+如果你在实验时为不同的线程调用了含有不同参数的thread::sleep函数，那么输出结果的差异有可能更为显著且难以确定。
+
+## 15.3 共享状态的并发
+
+### 15.3.1 互斥体一次只允许一个线程访问数据
+
+### 15.3.2 RefCell<T>/Rc<T>和Mutex<T>/Arc<T>之间的相似性
+
+## 15.4 使用Sync trait和Send trait对并发进行扩展
+
+### 15.4.1 允许线程间转移所有权的Send trait
+
+### 15.4.2 允许多线程同时访问的Sync trait
+
+### 15.4.3 手动实现Send和Sync是不安全的

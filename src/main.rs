@@ -107,19 +107,72 @@
 //     Ok(())
 // }
 
-use std::thread::JoinHandle;
-
 fn main() {
-    use std::thread;
-    let v = vec![1, 2, 3];
+    use std::time::Duration;
+    use std::{sync::mpsc, thread};
+    let (tx, rx) = mpsc::channel();
+    let tx1 = mpsc::Sender::clone(&tx);
 
-    let handle = thread::spawn(move || {
-        println!("{:?}", v);
+    thread::spawn(move || {
+        let arr = vec![String::from("hi"), String::from("ni hao")];
+        for val in arr {
+            tx.send(val).unwrap();
+            thread::sleep(Duration::from_secs(1));
+        }
     });
 
-    drop(v);
+    thread::spawn(move || {
+        let arr = vec![String::from("hello"), String::from("world")];
+        for val in arr {
+            tx1.send(val).unwrap();
+            thread::sleep(Duration::from_secs(1));
+        }
+    });
 
-    handle.join().unwrap();
+    for receive_val in rx {
+        println!("接受到：{}", receive_val);
+    }
+
+    // use std::time::Duration;
+    // use std::{sync::mpsc, thread};
+
+    // let (tx, rx) = mpsc::channel();
+
+    // thread::spawn(move || {
+    //     let arr = vec![String::from("hello"), String::from("world")];
+    //     for val in arr {
+    //         tx.send(val).unwrap();
+    //         thread::sleep(Duration::from_secs(1));
+    //     }
+    // });
+
+    // for receive_val in rx {
+    //     println!("接受到：{}", receive_val);
+    // }
+
+    // use std::{sync::mpsc, thread};
+
+    // let (tx, rx) = mpsc::channel();
+
+    // thread::spawn(move || {
+    //     let val = String::from("hello world");
+    //     tx.send(val).unwrap();
+    //     println!("{}", val);
+    // });
+
+    // let receive_val = rx.recv().unwrap();
+    // println!("{}", receive_val);
+
+    // use std::thread;
+    // let v = vec![1, 2, 3];
+
+    // let handle = thread::spawn(move || {
+    //     println!("{:?}", v);
+    // });
+
+    // drop(v);
+
+    // handle.join().unwrap();
 
     // let handle = thread::spawn(|| {
     //     for i in 1..10 {
