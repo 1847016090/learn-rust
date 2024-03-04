@@ -108,30 +108,57 @@
 // }
 
 fn main() {
-    use std::time::Duration;
-    use std::{sync::mpsc, thread};
-    let (tx, rx) = mpsc::channel();
-    let tx1 = mpsc::Sender::clone(&tx);
+    use std::sync::Arc;
+    use std::{sync::Mutex, thread};
 
-    thread::spawn(move || {
-        let arr = vec![String::from("hi"), String::from("ni hao")];
-        for val in arr {
-            tx.send(val).unwrap();
-            thread::sleep(Duration::from_secs(1));
-        }
-    });
-
-    thread::spawn(move || {
-        let arr = vec![String::from("hello"), String::from("world")];
-        for val in arr {
-            tx1.send(val).unwrap();
-            thread::sleep(Duration::from_secs(1));
-        }
-    });
-
-    for receive_val in rx {
-        println!("接受到：{}", receive_val);
+    let counter = Arc::new(Mutex::new(0));
+    let mut handles = vec![];
+    for _ in 0..10 {
+        let handle = thread::spawn(move || {
+            let clone_counter = Arc::clone(&counter);
+            let mut num = clone_counter.lock().unwrap();
+            *num += 1;
+        });
+        handles.push(handle)
     }
+
+    for h in handles {
+        h.join().unwrap();
+    }
+
+    println!("{}", *counter.lock().unwrap())
+
+    // let m = Mutex::new(1);
+    // {
+    //     let mut num = m.lock().unwrap();
+    //     *num += 1;
+    // }
+
+    // println!("{:?}", m); // Mutex { data: 6 }
+    // use std::time::Duration;
+    // use std::{sync::mpsc, thread};
+    // let (tx, rx) = mpsc::channel();
+    // let tx1 = mpsc::Sender::clone(&tx);
+
+    // thread::spawn(move || {
+    //     let arr = vec![String::from("hi"), String::from("ni hao")];
+    //     for val in arr {
+    //         tx.send(val).unwrap();
+    //         thread::sleep(Duration::from_secs(1));
+    //     }
+    // });
+
+    // thread::spawn(move || {
+    //     let arr = vec![String::from("hello"), String::from("world")];
+    //     for val in arr {
+    //         tx1.send(val).unwrap();
+    //         thread::sleep(Duration::from_secs(1));
+    //     }
+    // });
+
+    // for receive_val in rx {
+    //     println!("接受到：{}", receive_val);
+    // }
 
     // use std::time::Duration;
     // use std::{sync::mpsc, thread};

@@ -3160,14 +3160,139 @@ for receive_val in rx {
 
 ## 15.3 共享状态的并发
 
+消息传递确实是一种不错的并发通信机制，但它并不是唯一的解决方案。接下来，我们会先来讨论共享内存领域中一个较为常见的并发原语：**互斥体（mutex）**
+
 ### 15.3.1 互斥体一次只允许一个线程访问数据
 
-### 15.3.2 RefCell<T>/Rc<T>和Mutex<T>/Arc<T>之间的相似性
+访问互斥体中的数据，线程必须首先发出信号来获取互斥体的锁（lock）。锁是互斥体的一部分，这种数据结构被用来记录当前谁拥有数据的唯一访问权。通过锁机制，互斥体守护（guarding）了它所持有的数据。
+互斥体是出了名的难用，因为你必须牢记下面**两条规则**：
+
+- 必须在使用数据前尝试获取锁。
+- 必须在使用完互斥体守护的数据后释放锁，这样其他线程才能继续完成获取锁的操
+  
+接下来我们来演示一个单线程环境里面使用互斥体：
+
+```rust
+let m = Mutex::new(1);
+{
+    let mut num = m.lock().unwrap();
+    *num += 1;
+}
+
+println!("{:?}", m); // Mutex { data: 6 }
+```
+
+当我们获取到锁，我们可以将`num`视为一个指向内部数据的可变引用，从而去修改他的值。
+
+#### 多个线程间共享`Mutex<T>`
+
+现在，让我们试着在多线程环境中使用`Mutex<T>`:
+
+```rust
+use std::{sync::Mutex, thread};
+
+let counter = Mutex::new(0);
+let mut handles = vec![];
+for _ in 0..10 {
+    let handle = thread::spawn(move || {
+        let mut num = counter.lock().unwrap();
+        *num += 1;
+    });
+    handles.push(handle)
+}
+
+for h in handles {
+    h.join().unwrap();
+}
+
+println!("{:?}", *counter.lock().unwrap())
+```
+
+在我们执行后，我们会发现counter被移动到了handle指代的线程后，阻止了我们在第二个线程中调用lock来再次捕获counter。我们不应该将counter的所有权移动到到多个线程中。这个时候我们是不是可以使用用`Rc`来创建多重所有权去解决呢？
+
+#### 多线程与多重所有权
+
+我们来试试用`Rc`来解决这个问题：
+
+```rust
+let counter = Rc::new(Mutex::new(0));
+let mut handles = vec![];
+for _ in 0..10 {
+    let handle = thread::spawn(move || {
+        let clone_counter = Rc::clone(&counter);
+        let mut num = clone_counter.lock().unwrap();
+        *num += 1;
+    });
+    handles.push(handle)
+}
+
+for h in handles {
+    h.join().unwrap();
+}
+
+println!("{:?}", *counter.lock().unwrap())
+```
+
+我们运行后发现报错：
+
+```rust
+`Rc<Mutex<i32>>` cannot be sent between threads safely
+within `{closure@src/main.rs:117:36: 117:43}`, the trait `Send` is not implemented for `Rc<Mutex<i32>>`
+```
+
+这段话告诉我`Mutex<i32>`类型无法安全地在线程间传递，该类型不满足trait约束Send。好家伙，又引入新的`trait`。我们会在后面章节详细讲到该特征。它确保了我们在线程中使用的类型能够在并发环境下正常工作。但是不幸的是，`Rc<T>`并未实现该特征。
+
+`Rc<T>`在跨线程使用时并不安全。当`Rc<T>`管理引用计数时，它会在每次调用clone的过程中增加引用计数，并在克隆出的实例被丢弃时减少引用计数，但它并没有使用任何并发原语来保证修改计数的过程不会被另一个线程所打断
+
+#### 原子引用计数`Arc<T>`
+
+`Arc<T>`的类型，它既拥有类似于`Rc<T>`的行为，又保证了自己可以被安全地用于并发场景。原子是一种新的并发原语，我们可以参考标准库文档中的`std::sync::atomic`部分来获得更多相关信息。你现在只需要知道：原子和原生类型的用法十分相似，并且可以安全地在多个线程间共享。
+
+那么标准库的类型为什么不默认使用`Arc<T>`来实现呢？
+这是因为我们需要付出一定的性能开销才能够实现线程安全，而我们只应该在必要时为这种开销买单。
+
+```rust
+use std::sync::Arc;
+use std::{sync::Mutex, thread};
+
+let counter = Arc::new(Mutex::new(0));
+let mut handles = vec![];
+for _ in 0..10 {
+    let handle = thread::spawn(move || {
+        let clone_counter = Arc::clone(&counter);
+        let mut num = clone_counter.lock().unwrap();
+        *num += 1;
+    });
+    handles.push(handle)
+}
+
+for h in handles {
+    h.join().unwrap();
+}
+
+println!("{}", *counter.lock().unwrap()) // 10
+```
+
+你可以使用本节中的程序结构去完成比计数更为复杂的工作。基于这个策略，你可以将计算分割为多个独立的部分，并将它们分配至不同的线程中，然后使用`Mutex<T>`来允许不同的线程更新计算结果中与自己有关的那一部分
+
+### 15.3.2 `RefCell<T>/Rc<T>`和`Mutex<T>/Arc<T>`之间的相似性
+
+`Mutex<T>`与Cell系列类型有着相似的功能，它同样提供了内部可变性。我们在第15章使用了`RefCell<T>`来改变`Rc<T>`中的内容，而本节按照同样的方式使用`Mutex<T>`来改变`Arc<T>`中的内容。
+
+另外还有一个值得注意的细节是，Rust并不能使你完全避免使用`Mutex<T>`过程中所有的逻辑错误。回顾第15章中讨论的内容，使用`Rc<T>`会有产生循环引用的风险。两个`Rc<T>`值在互相指向对方时会造成内存泄漏。与之类似，使用`Mutex<T>`也会有产生死锁（deadlock）的风险。当某个操作需要同时锁住两个资源，而两个线程分别持有其中一个锁并相互请求另外一个锁时，这两个线程就会陷入无穷尽的等待过程。
+
+如果你对死锁感兴趣，不妨试着编写一个可能导致死锁的Rust程序。然后，你还可以借鉴其他语言中规避互斥体死锁的策略，并在Rust中实现它们。标准库API文档的`Mutex<T>`和`MutexGuard`页面为此提供了许多有用的信息。
 
 ## 15.4 使用Sync trait和Send trait对并发进行扩展
 
 ### 15.4.1 允许线程间转移所有权的Send trait
 
+只有实现了Send trait的类型才可以安全地在线程间转移所有权。除了Rc<T>等极少数的类型，几乎所有的Rust类型都实现了Send trait：如果你将克隆后的Rc<T>值的所有权转移到了另外一个线程中，那么两个线程就有可能同时更新引用计数值并进而导致计数错误。因此，Rc<T>只被设计在单线程场景中使用，它
+
 ### 15.4.2 允许多线程同时访问的Sync trait
 
+只有实现了Sync trait的类型才可以安全地被多个线程引用。智能指针`Rc<T>`同样不满足Sync约束，其原因与它不满足Send约束类似。而正如“在多个线程间共享`Mutex<T>`”一节中讨论的那样，智能指针`Mutex<T>`是Sync的，可以被多个线程共享访问。
+
 ### 15.4.3 手动实现Send和Sync是不安全的
+
+手动实现这些trait涉及使用特殊的不安全Rust代码。我们将在第19章讨论这一概念，目前你需要注意的是，当你构建的自定义并发类型包含了没有实现Send或Sync的类型时，你必须要非常谨慎地确保设计能够满足线程间的安全性要求。Rust官方网站中的The Rustonomicon文档详细地讨论了此类安全性保证及如何满足安全性要求的具体技术。
