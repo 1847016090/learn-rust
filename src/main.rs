@@ -107,26 +107,53 @@
 //     Ok(())
 // }
 
+use core::num;
+
 fn main() {
-    use std::sync::Arc;
-    use std::{sync::Mutex, thread};
+    let (x, y,_) = (1, 2, 3);
+    println!("{:?}", x)
+    // let arr = vec!['a', 'b', 'b'];
 
-    let counter = Arc::new(Mutex::new(0));
-    let mut handles = vec![];
-    for _ in 0..10 {
-        let handle = thread::spawn(move || {
-            let clone_counter = Arc::clone(&counter);
-            let mut num = clone_counter.lock().unwrap();
-            *num += 1;
-        });
-        handles.push(handle)
-    }
+    // for (index, value) in arr.iter().enumerate() {
+    //     println!("{}的索引是{}", value, index)
+    // }
 
-    for h in handles {
-        h.join().unwrap();
-    }
+    // let mut arr = vec![1, 2, 3];
 
-    println!("{}", *counter.lock().unwrap())
+    // while let Some(num) = arr.pop() {
+    //     println!("{}", num)
+    // }
+
+    // let num: Result<i32, _> = "1".parse();
+    // if let Some(num) = Some('1') {
+    //     println!("if let")
+    // } else if true {
+    //     println!("else if")
+    // } else if let Ok(num) = num {
+    //     println!("else if let")
+    // } else {
+    //     println!("else")
+    // }
+
+    // use std::sync::Arc;
+    // use std::{sync::Mutex, thread};
+
+    // let counter = Arc::new(Mutex::new(0));
+    // let mut handles = vec![];
+    // for _ in 0..10 {
+    //     let handle = thread::spawn(move || {
+    //         let clone_counter = Arc::clone(&counter);
+    //         let mut num = clone_counter.lock().unwrap();
+    //         *num += 1;
+    //     });
+    //     handles.push(handle)
+    // }
+
+    // for h in handles {
+    //     h.join().unwrap();
+    // }
+
+    // println!("{}", *counter.lock().unwrap())
 
     // let m = Mutex::new(1);
     // {
