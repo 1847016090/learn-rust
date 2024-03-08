@@ -3441,3 +3441,167 @@ if let x = 5 {
 ```
 
 因此，在match表达式的匹配分支中，除了最后一个，其他必须全部使用可失败模式，而最后的分支则应该使用不可失败模式，因为它需要匹配值的所有剩余的情形。
+
+### 16.3 模式语法
+
+本节会整理所有的关于模式的语法:）
+
+#### 16.3.1 匹配字面量
+
+最简单的一个匹配就是匹配字面量：
+
+```rust
+let x = 1;
+match x {
+    1 => println!("one"),
+    2 => println!("two"),
+    3 => println!("three"),
+    _ => println!("anything"),
+}
+```
+
+#### 16.3.2 匹配命名变量
+
+**命名变量**是一种可以匹配任何值的不可失败模式。由于match开启了一个新的作用域，所以被定义在match表达式内作为模式一部分的变量会覆盖掉match结构外的同名变量，正如覆盖其他普通变量一样。
+
+```rust
+let x = Some(5);
+let y = 6;
+
+match x {
+    Some(y) => {
+        println!("{}", y);
+    }
+    _ => {
+        println!("匹配到其他值")
+    }
+}
+
+println!("{}", y);
+```
+
+这里因为因为我们的`Some`变体中的参数是y，所以打印出来的y不会使用外部的y值，而是使用变体中的值。
+
+#### 16.3.3 多重模式
+
+你可以在match表达式的分支匹配中使用|来表示或（or）的意思
+
+```rust
+let x = 1;
+match x {
+    1 | 2 => {
+        println!("匹配成功")
+    }
+    _ => {
+        println!("匹配失败")
+    }
+}
+```
+
+#### 16.3.4 使用...来匹配值区间
+
+我们可以使用...来匹配闭区间的值。
+
+```rust
+let x = 5;
+match x {
+    1..=5 => {
+        println!("成功匹配1-5之间的值")
+    }
+    _ => {
+        println!("匹配失败")
+    }
+}
+```
+
+当然也可以匹配字符串的值：
+
+```rust
+let x = 'a';
+match x {
+    'a'..='c' => {
+        println!("成功匹配a-c之间的值")
+    }
+    _ => {
+        println!("匹配失败")
+    }
+}
+```
+
+#### 16.3.5 使用解构来分解值
+
+我们可以使用模式来分解结构体、枚举、元组或引用，从而使用这些值中的不同部分
+
+##### 16.3.5.1 解构结构体
+
+我们可以对结构体解构并可以重新命名，如下：
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+let pt = Point { x: 1, y: 2 };
+let Point { x, y } = pt;
+let Point { x: a, y: b } = pt;
+
+println!("x={}, y={}", x, y);
+println!("a={}, b={}", a, b);
+```
+
+我们还可以使用模式来匹配解构的值，如下：
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+let pt = Point { x: 1, y: 2 };
+
+match pt {
+    Point { x, y: 0 } => {
+        println!("匹配X轴上面的点={}", x)
+    }
+    Point { x: 0, y } => {
+        println!("匹配Y轴上面的点={}", y)
+    }
+    Point { x, y } => {
+        println!("x={}，y={}", x, y);
+    }
+}
+```
+
+我们声明的`Point`点位信息，然后我们可以通过模式去匹配X，Y轴上面的点。
+
+##### 16.3.5.2 解构枚举
+
+我们解构枚举的时候需要注意：用于解构枚举的模式必须要对应枚举定义中存储。
+
+```rust
+enum Message {
+    Quit,
+    Move { x: i32, y: i32 },
+    Write(String),
+    ChangeColor(i32, i32, i32),
+}
+
+let x = Message::ChangeColor(255, 255, 255);
+match x {
+    Message::Quit => {
+        println!("退出")
+    }
+    Message::Move { x, y } => {
+        println!("移动到: x={}, y={}", x, y);
+    }
+    Message::Write(s) => {
+        println!("写下了：{}", &s[0..])
+    }
+    Message::ChangeColor(a, b, c) => {
+        println!("色值：a={}, b={}, c={}", a, b, c);
+    }
+}
+````
+
+注意：模式中的变量数目必须与目标变体中的元素数目完全一致，否则会出现编译错误。

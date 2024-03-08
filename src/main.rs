@@ -110,8 +110,94 @@
 use core::num;
 
 fn main() {
-    let (x, y,_) = (1, 2, 3);
-    println!("{:?}", x)
+    enum Message {
+        Quit,
+        Move { x: i32, y: i32 },
+        Write(String),
+        ChangeColor(i32, i32, i32),
+    }
+
+    let x = Message::ChangeColor(255, 255, 255);
+    match x {
+        Message::Quit => {
+            println!("退出")
+        }
+        Message::Move { x, y } => {
+            println!("移动到: x={}, y={}", x, y);
+        }
+        Message::Write(s) => {
+            println!("写下了：{}", &s[0..])
+        }
+        Message::ChangeColor(a, b, c) => {
+            println!("色值：a={}, b={}, c={}", a, b, c);
+        }
+    }
+
+    // struct Point {
+    //     x: i32,
+    //     y: i32,
+    // }
+
+    // let pt = Point { x: 1, y: 2 };
+
+    // match pt {
+    //     Point { x, y: 0 } => {
+    //         println!("匹配X轴上面的点={}", x)
+    //     }
+    //     Point { x: 0, y } => {
+    //         println!("匹配Y轴上面的点={}", y)
+    //     }
+    //     Point { x, y } => {
+    //         println!("x={}，y={}", x, y);
+    //     }
+    // }
+
+    // struct Point {
+    //     x: i32,
+    //     y: i32,
+    // }
+
+    // let pt = Point { x: 1, y: 2 };
+    // let Point { x, y } = pt;
+    // let Point { x: a, y: b } = pt;
+
+    // println!("x={}, y={}", x, y);
+    // println!("a={}, b={}", a, b);
+
+    // let x = 'a';
+    // match x {
+    //     'a'..='c' => {
+    //         println!("成功匹配a-c之间的值")
+    //     }
+    //     _ => {
+    //         println!("匹配失败")
+    //     }
+    // }
+    // let x = 1;
+    // match x {
+    //     1 | 2 => {
+    //         println!("匹配成功")
+    //     }
+    //     _ => {
+    //         println!("匹配失败")
+    //     }
+    // }
+
+    // let x = Some(5);
+    // let y = 6;
+
+    // match x {
+    //     Some(y) => {
+    //         println!("{}", y);
+    //     }
+    //     _ => {
+    //         println!("匹配到其他值")
+    //     }
+    // }
+
+    // println!("{}", y);
+    // let (x, y,_) = (1, 2, 3);
+    // println!("{:?}", x)
     // let arr = vec!['a', 'b', 'b'];
 
     // for (index, value) in arr.iter().enumerate() {
