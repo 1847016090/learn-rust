@@ -110,28 +110,126 @@
 use core::num;
 
 fn main() {
-    enum Message {
-        Quit,
-        Move { x: i32, y: i32 },
-        Write(String),
-        ChangeColor(i32, i32, i32),
+    struct Message {
+        id: i32,
     }
 
-    let x = Message::ChangeColor(255, 255, 255);
-    match x {
-        Message::Quit => {
-            println!("退出")
+    let msg = Message { id: 3 };
+    match msg {
+        Message { id: sub_id @ 1..=7 } => {
+            println!("{}", sub_id)
         }
-        Message::Move { x, y } => {
-            println!("移动到: x={}, y={}", x, y);
-        }
-        Message::Write(s) => {
-            println!("写下了：{}", &s[0..])
-        }
-        Message::ChangeColor(a, b, c) => {
-            println!("色值：a={}, b={}, c={}", a, b, c);
+        Message { id } => {
+            println!("{}", id)
         }
     }
+
+    // let x: Option<i32> = Some(5);
+
+    // match x {
+    //     Some(y) if y < 6 => {
+    //         println!("匹配成功")
+    //     }
+    //     _ => {
+    //         println!("匹配失败")
+    //     }
+    // }
+
+    // let tp = (1, 2, 3, 4, 5, 6);
+    // match tp {
+    //     (first, .., last) => {
+    //         println!("first={}, last={}", first, last)
+    //     }
+    // }
+
+    // struct Point {
+    //     x: i32,
+    //     y: i32,
+    //     z: i32,
+    // }
+
+    // let pt = Point { x: 1, y: 2, z: 3 };
+    // match pt {
+    //     Point { x, .. } => {
+    //         println!("x={}", x);
+    //     }
+    // }
+
+    // let x = 1;
+    // let _y = 2;
+    // println!("x={}", x);
+    // let numbers = (1, 2, 3, 4, 5);
+    // match numbers {
+    //     (a, _, b, _, c) => {
+    //         println!("a={}, b={}, c={}", a, b, c)
+    //     }
+    //     _ => {
+    //         println!("未匹配")
+    //     }
+    // }
+    // let mut setting_value = Some(1);
+    // let new_setting_value = Some(2);
+
+    // match (setting_value, new_setting_value) {
+    //     (Some(_), Some(_)) => {
+    //         println!("不会覆盖值")
+    //     }
+    //     _ => {
+    //         setting_value = new_setting_value;
+    //     }
+    // }
+    // println!("{:?}", setting_value);
+    // fn foo(_: i32, y: i32) {
+    //     println!("{}", y);
+    // }
+
+    // struct Color(i32, i32, i32);
+
+    // enum Message {
+    //     Quit,
+    //     Move { x: i32, y: i32 },
+    //     Write(String),
+    //     ChangeColor(Color),
+    // }
+
+    // let x = Message::ChangeColor(Color(255, 255, 255));
+    // match x {
+    //     Message::Quit => {
+    //         println!("退出")
+    //     }
+    //     Message::Move { x, y } => {
+    //         println!("移动到: x={}, y={}", x, y);
+    //     }
+    //     Message::Write(s) => {
+    //         println!("写下了：{}", &s[0..])
+    //     }
+    //     Message::ChangeColor(Color(a, b, c)) => {
+    //         println!("色值：a={}, b={}, c={}", a, b, c);
+    //     }
+    // }
+
+    // enum Message {
+    //     Quit,
+    //     Move { x: i32, y: i32 },
+    //     Write(String),
+    //     ChangeColor(i32, i32, i32),
+    // }
+
+    // let x = Message::ChangeColor(255, 255, 255);
+    // match x {
+    //     Message::Quit => {
+    //         println!("退出")
+    //     }
+    //     Message::Move { x, y } => {
+    //         println!("移动到: x={}, y={}", x, y);
+    //     }
+    //     Message::Write(s) => {
+    //         println!("写下了：{}", &s[0..])
+    //     }
+    //     Message::ChangeColor(a, b, c) => {
+    //         println!("色值：a={}, b={}, c={}", a, b, c);
+    //     }
+    // }
 
     // struct Point {
     //     x: i32,

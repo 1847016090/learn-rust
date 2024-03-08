@@ -3602,6 +3602,173 @@ match x {
         println!("色值：a={}, b={}, c={}", a, b, c);
     }
 }
-````
+```
 
 注意：模式中的变量数目必须与目标变体中的元素数目完全一致，否则会出现编译错误。
+
+##### 16.3.5.3 解构嵌套的结构体和枚举
+
+到目前为止，我们所有的示例都只匹配了单层的结构体或枚举，但匹配语法还可以被用于嵌套的结构中。
+我们改造一下上面的例子，再声明一个元祖结构体，将它嵌套在第一个结构体中的`ChangeColor`变体中：
+
+```rust
+enum Message {
+    Quit,
+    Move { x: i32, y: i32 },
+    Write(String),
+    ChangeColor(Color),
+}
+
+let x = Message::ChangeColor(Color(255, 255, 255));
+match x {
+    Message::Quit => {
+        println!("退出")
+    }
+    Message::Move { x, y } => {
+        println!("移动到: x={}, y={}", x, y);
+    }
+    Message::Write(s) => {
+        println!("写下了：{}", &s[0..])
+    }
+    Message::ChangeColor(Color(a, b, c)) => {
+        println!("色值：a={}, b={}, c={}", a, b, c);
+    }
+}
+```
+
+##### 16.3.5.4 解构结构体和元组
+
+我们甚至可以按照某种更为复杂的方式来将模式混合、匹配或嵌套在一起
+
+```rust
+let ((feet, inches), Point {x, y}) = ((3, 10), Point { x: 3, y: -10 });
+```
+
+这段代码能够将复杂的类型值分解为不同的组成部分，以便使我们可以分别使用自己感兴趣的值。
+
+#### 16.3.5 忽略模式中的值
+
+某些场景下忽略模式中的值是有意义的，例如在match表达式的最后一个分支中，代码可以匹配剩余所有可能的值而又不需要执行什么操作。有几种不同的方法可以让我们在模式中忽略全部或部分值：
+
+- 使用_模式
+- 在另一个模式中使用_模式
+- 使用以下画线开头的名称
+- 或者使用..来忽略值的剩余部分。
+
+##### 16.3.5.1 使用_忽略整个值
+
+我么可以将下画线_作为通配符模式来匹配任意可能的值而不绑定值本身的内容，例如：
+
+```rust
+fn foo(_: i32, y: i32) {
+    println!("{}", y);
+}
+```
+
+##### 16.3.5.2 使用嵌套的_忽略值的某些部分
+
+我们还可以使用`_`忽略值的某一部分，比如下面，如果我们
+
+```rust
+let mut setting_value = Some(1);
+let new_setting_value = Some(2);
+
+match (setting_value, new_setting_value) {
+    (Some(_), Some(_)) => {
+        println!("不会覆盖值");
+    }
+    _ => {
+        setting_value = new_setting_value;
+    }
+}
+println!("{:?}", setting_value);
+```
+
+我们也可以在一个模式中多次使用下画线来忽略多个特定的值，如：
+
+```rust
+let numbers = (1, 2, 3, 4, 5);
+match numbers {
+    (a, _, b, _, c) => {
+        println!("a={}, b={}, c={}", a, b, c)
+    }
+    _ => {
+        println!("未匹配")
+    }
+}
+```
+
+为了避免Rust在这些场景中因为某些未使用的变量而抛出警告，我们可以在这些变量的名称前添加下画线，例如：
+
+```rust
+let x = 1;
+let _y = 2;
+println!("x={}", x);
+```
+
+##### 16.3.5.3 使用..忽略值的剩余部分
+
+对于拥有多个部分的值，我们可以使用..语法来使用其中的某一部分并忽略剩余的那些部分。这使我们不必为每一个需要忽略的值都添加对应的_模式来进行占位。..模式可以忽略一个值中没有被我们显式匹配的那些部分
+
+```rust
+struct Point {
+    x: i32,
+    y: i32,
+    z: i32,
+}
+
+let pt = Point { x: 1, y: 2, z: 3 };
+match pt {
+    Point { x, .. } => {
+        println!("x={}", x);
+    }
+}
+```
+
+我们再来试试在元祖里面使用，可以将第一位和最后一位匹配出来：
+
+```rust
+let tp = (1, 2, 3, 4, 5, 6);
+match tp {
+    (first, .., last) => {
+        println!("first={}, last={}", first, last)
+    }
+}
+```
+
+#### 16.3.6 使用匹配守卫添加额外条件
+
+匹配守卫（match guard）是附加在match分支模式后的if条件语句，分支中的模式只有在该条件被同时满足时才能匹配成功。相比于单独使用模式，匹配守卫可以表达出更为复杂的意图。
+
+```rust
+let x: Option<i32> = Some(5);
+
+match x {
+    Some(y) if y < 6 => {
+        println!("匹配成功")
+    }
+    _ => {
+        println!("匹配失败")
+    }
+}
+```
+
+#### 16.3.7 @绑定
+
+@运算符允许我们在测试一个值是否匹配模式的同时创建存储该值的变量
+
+```rust
+struct Message {
+    id: i32,
+}
+
+let msg = Message { id: 3 };
+match msg {
+    Message { id: sub_id @ 1..=7 } => {
+        println!("{}", sub_id)
+    }
+    Message { id } => {
+        println!("{}", id)
+    }
+}
+```
