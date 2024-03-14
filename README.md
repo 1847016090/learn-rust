@@ -3978,3 +3978,213 @@ unsafe impl Foo for i32 {
 #### 17.2.5 使用不安全代码的时机
 
 使用unsafe来执行刚刚讨论过的4种操作（超能力）并没有什么问题，执行的时候甚至都不用皱眉头。但是由于它们缺少编译器提供的强制内存安全保障，所以想要始终保持unsafe代码的正确性也并不是一件简单的事情。你可以在拥有充足理由时使用unsafe，并在出现问题时通过显式标记的unsafe关键字来较为轻松地定位到它们。
+
+
+### 17.3 高级trait
+#### 17.3.1 在trait的定义中使用关联类型指定占位类型
+关联类型（associated type）是trait中的类型占位符，它可以被用于trait的方法签名中。通过这一技术，我们可以定义出包含某些类型的trait，而无须在实现前确定它们的具体类型是什么。标准库中的`Iterator`就是使用到了关联类型，我在之前也有写过：
+```rust
+pub trait Iterator {
+    type Item;
+    fn next(&mut self) -> Option<Self::Item> 
+}
+```
+
+那么我们为什么需要使用关联类型呢？我们来看个例子：
+```rust
+impl Iterator for Counter {
+    type Item = u32;
+    fn next(&mut self) -> Option<Self::Item> {}
+}
+```
+
+我们再来看看使用范型的例子：
+```rust
+pub trait Iterator<T> {
+    fn next(&mut self) -> Option<T>;
+}
+```
+这里的语法差不多。但是我们在使用范型的时候，我们需要每次都为它进行类型标注。
+但是借助关联类型，我们不需要在使用该`trait`的方法时标注类型，因为我们不能为单个类型多次实现这样的`trait`。由于我们只能实现一次`impl Iterator for Counter`，所以`Counter`就只能拥有一个特定的`Item`类型。我们不需要在每次调用`Counter`的`next`方法时来显式地声明这是一个`u32`类型的迭代器。
+
+
+#### 17.3.2 默认泛型参数和运算符重载
+我们可以在使用泛型参数时为泛型指定一个默认的具体类型。当使用默认类型就能工作时，该trait的实现者可以不用再指定另外的具体类型。你可以在定义泛型时通过语法`<PlaceholderType=ConcreteType>`来为泛型指定默认类型。
+
+这个技术常常被应用在**运算符重载**中。运算符重载使我们可以在某些特定的情形下自定义运算符（比如+）的具体行为
+```rust
+#[derive(Debug, PartialEq)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+impl Add for Point {
+    type Output = Point;
+    fn add(self, rhs: Self) -> Self::Output {
+        Point {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y
+        }
+    }
+}
+
+let a = Point {x: 1, y:1};
+let b = Point {x:2,y:3};
+
+println!("{:?}", a+b)
+```
+
+`Add trait`拥有一个名为`Output`的关联类型，它被用来确定`add`方法的返回类型。它的实现：
+```rust
+trait Add<RHS=Self> {
+    type Output;
+
+    fn add(self, rhs: RHS) -> Self::Output;
+}
+```
+
+那段新的语法`RHS=Self`就是所谓的默认类型参数（default type parameter）。泛型参数RHS（也就是`“right-handle side”`的缩写）定义了`add`方法中`rhs`参数的类型。
+
+默认类型参数主要被用于以下两种场景：
+- 扩展一个类型而不破坏现有代码。
+- 允许在大部分用户都不需要的特定场合进行自定义。
+
+#### 17.3.3 用于消除歧义的完全限定语法：调用相同名称的方法
+Rust既不会阻止两个trait拥有相同名称的方法，也不会阻止你为同一个类型实现这样的两个trait。
+```rust
+trait Polit {
+    fn fly(&self) {
+        
+    }
+}
+
+trait Human {
+    fn fly(&self) {
+        
+    }
+}
+
+struct Bird;
+
+impl Bird {
+    fn fly(&self) {
+        println!("Bird")
+    }
+}
+
+impl Polit for Bird {
+    fn fly(&self) {
+        println!("Polit")
+    }
+}
+
+impl Human for Bird {
+    fn fly(&self) {
+        println!("Human")
+    }
+}
+
+let b = Bird;
+b.fly();
+
+Polit::fly(&b);
+Human::fly(&b)
+
+// Bird
+// Polit
+// Human
+```
+这里为了调用实现在Pilot trait或Wizard trait中的fly方法，我们使用更加显式的语法来指定具体的fly方法
+
+但是因为trait中的关联函数没有self参数，所以当在同一作用域下有两个实现了此种trait的类型时，Rust无法推导出你究竟想要调用哪一个具体类型，除非使用完全限定语法。
+```rust
+trait Animal {
+    fn baby_name() -> String;
+}
+
+struct Dog;
+
+impl Dog {
+    fn baby_name() -> String {
+        String::from("Spot")
+    }
+}
+
+impl Animal for Dog {
+    fn baby_name() -> String {
+        String::from("puppy")
+    }
+}
+
+fn main() {
+    println!("A baby dog is called a {}", Dog::baby_name());
+}
+```
+这里编译是没有问题的。但是当我们执行下面的打印时，就会发生包错：
+```rust
+fn main() {
+    println!("A baby dog is called a {}", Animal::baby_name());
+}
+```
+这里因为Rust不知道使用哪一个去实现。由于`Animal::baby_name`是一个没有`self`参数的关联函数而不是方法，所以Rust无法推断出我们想要调用哪一个`Animal::baby_name`的实现。
+
+为了消除歧义并指示Rust使用Dog为Animal trait实现的baby_name函数，我们需要使用完全限定语法。
+```rust
+fn main() {
+    println!("A baby dog is called a {}", <Dog as Animal>::baby_name());
+}
+```
+代码在尖括号中提供的类型标注表明我们希望**将Dog类型视作Animal，并调用Dog为Animal trait实现的baby_name函数**。
+
+一般来说，**完全限定语法**被定义为如下所示的形式：
+```rust
+<Type as Trait>::function(receiver_if_method, next_arg, ...);
+```
+#### 17.3.3 用于在trait中附带另外一个trait功能的超trait
+有时候，你会需要在一个trait中使用另外一个trait的功能。在这种情况下，我们需要使当前trait的功能依赖于另外一个同时被实现的trait。这个被依赖的trait也就是当前trait的超trait（supertrait）。
+
+我们可以在定义trait时指定OutlinePrint: Display来完成该声明，这有些类似于为泛型添加trait约束
+```rust
+use std::fmt;
+
+trait OutlinePrint: fmt::Display {
+    fn outline_print(&self) {
+        let output = self.to_string();
+        let len = output.len();
+        println!("{}", "*".repeat(len + 4));
+        println!("*{}*", " ".repeat(len + 2));
+        println!("* {} *", output);
+        println!("*{}*", " ".repeat(len + 2));
+        println!("{}", "*".repeat(len + 4));
+    }
+}
+```
+
+#### 17.3.4 使用newtype模式在外部类型上实现外部trait
+我们在之前的章节中有提到过一个规则**孤儿规则**：
+只有当类型和对应trait中的任意一个定义在本地包内时，我们才能够为该类型实现这一trait。
+
+但实际上，我们可以使用**newtype模式**来巧妙地绕过这个限制，它使用元组结构体创建出一个新的类型。这个元组结构体只有一个字段，是我们想要实现trait的类型的瘦封装。由于封装后的类型位于本地包内，所以我们可以为这个壳类型实现对应的trait。
+
+
+孤儿规则会阻止我们直接为`Vec<T>`实现`Display`，因为`Display trait`与`Vec<T>`类型都被定义在外部包中。为了解决这一问题，我们可以首先创建一个持有`Vec<T>`实例的Wrapper结构体。接着，我们便可以为Wrapper实现`Display`并使用`Vec<T>`
+```rust
+use std::fmt;
+
+struct Wrapper(Vec<String>);
+
+impl fmt::Display for Wrapper {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[{}]", self.0.join(", "))
+    }
+}
+
+fn main() {
+    let w = Wrapper(vec![String::from("hello"),
+String::from("world")]);
+    println!("w = {}", w);
+}
+```
+
+这项技术仍然有它的不足之处。因为使用元祖结构体包裹之后，原本数组存在的函数和方法，我们都需要手动去实现了。

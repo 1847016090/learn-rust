@@ -108,23 +108,86 @@
 // }
 
 use core::num;
+use std::ops::Add;
 
 fn main() {
-    use std::slice;
 
-    fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
-        let len = slice.len();
-        let ptr = slice.as_mut_ptr();
+    // struct 
 
-        assert!(mid <= len);
+    // trait Polit {
+    //     fn fly(&self) {
+            
+    //     }
+    // }
 
-        unsafe {
-            (
-                slice::from_raw_parts_mut(ptr, mid),
-                slice::from_raw_parts_mut(ptr.offset(mid as isize), len - mid),
-            )
-        }
-    }
+    // trait Human {
+    //     fn fly(&self) {
+            
+    //     }
+    // }
+
+    // struct Bird;
+    
+    // impl Bird {
+    //     fn fly(&self) {
+    //         println!("Bird")
+    //     }
+    // }
+
+    // impl Polit for Bird {
+    //     fn fly(&self) {
+    //         println!("Polit")
+    //     }
+    // }
+
+    // impl Human for Bird {
+    //     fn fly(&self) {
+    //         println!("Human")
+    //     }
+    // }
+
+    // let b = Bird;
+    // b.fly();
+
+    // Polit::fly(&b);
+    // Human::fly(&b)
+
+
+    // #[derive(Debug, PartialEq)]
+    // struct Point {
+    //     x: i32,
+    //     y: i32,
+    // }
+
+    // impl Add for Point {
+    //     type Output = Point;
+    //     fn add(self, rhs: Self) -> Self::Output {
+    //         Point {
+    //             x: self.x + rhs.x,
+    //             y: self.y + rhs.y
+    //         }
+    //     }
+    // }
+
+    // let a = Point {x: 1, y:1};
+    // let b = Point {x:2,y:3};
+
+    // println!("{:?}", a+b)
+    // use std::slice;
+
+    // fn split_at_mut(slice: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
+    //     let len = slice.len();
+    //     let ptr = slice.as_mut_ptr();
+
+    //     assert!(mid <= len);
+
+    //     unsafe {
+    //         (
+    //             slice::from_raw_parts_mut(ptr, mid),
+    //             slice::from_raw_parts_mut(ptr.offset(mid as isize), len - mid),
+    //         )
+    //     }
+    // }
 
     // let mut v = vec![1, 2, 3, 4, 5, 6];
 
